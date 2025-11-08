@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import db from './database';
 import authRoutes from './routes/auth';
 import wishlistRoutes from './routes/wishlists';
 
@@ -28,7 +27,6 @@ app.listen(PORT, () => {
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-  db.close();
   process.exit(0);
 });
 
