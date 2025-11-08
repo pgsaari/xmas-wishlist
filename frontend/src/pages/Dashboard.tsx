@@ -5,6 +5,7 @@ import { ItemModal } from '../components/ItemModal';
 import { SortableItemCard } from '../components/SortableItemCard';
 import { ShareModal } from '../components/ShareModal';
 import { InstallPWA } from '../components/InstallPWA';
+import { DarkModeToggle } from '../components/DarkModeToggle';
 import {
   DndContext,
   closestCenter,
@@ -244,30 +245,31 @@ export const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 flex items-center justify-center">
         <div className="text-center">
           <div className="spinner mx-auto mb-4"></div>
-          <p className="text-neutral-600 font-medium">Loading your wishlist...</p>
+          <p className="text-neutral-600 dark:text-neutral-400 font-medium">Loading your wishlist...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
       {/* Navigation */}
-      <nav className="bg-white border-b border-neutral-200 sticky top-0 z-40 shadow-sm">
+      <nav className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <span className="text-2xl">🎄</span>
-              <h1 className="text-xl font-bold text-neutral-900">Christmas Wishlist</h1>
+              <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-50">Christmas Wishlist</h1>
             </div>
             <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-neutral-100 rounded-lg">
-                <span className="text-sm text-neutral-600">👤</span>
-                <span className="text-sm font-medium text-neutral-700">{user?.name}</span>
+              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">👤</span>
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{user?.name}</span>
               </div>
+              <DarkModeToggle />
               <InstallPWA />
               <button
                 onClick={handleShare}
@@ -304,12 +306,12 @@ export const Dashboard: React.FC = () => {
         {/* Wishlist Title */}
         {wishlist && (
           <div className="mb-8 animate-fade-in">
-            <label className="text-sm font-semibold text-neutral-600 block mb-2">Wishlist Title</label>
+            <label className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 block mb-2">Wishlist Title</label>
             <input
               type="text"
               value={wishlist.title}
               onChange={(e) => handleUpdateTitle(e.target.value)}
-              className="text-4xl font-bold bg-transparent border-b-2 border-neutral-300 focus:outline-none focus:border-primary-600 focus:ring-0 w-full pb-2 transition-colors text-neutral-900"
+              className="text-4xl font-bold bg-transparent border-b-2 border-neutral-300 dark:border-neutral-600 focus:outline-none focus:border-primary-600 dark:focus:border-primary-400 focus:ring-0 w-full pb-2 transition-colors text-neutral-900 dark:text-neutral-50"
             />
           </div>
         )}
@@ -323,8 +325,8 @@ export const Dashboard: React.FC = () => {
             ➕ Add Item
           </button>
           {wishlist && wishlist.items.length > 0 && (
-            <div className="text-sm text-neutral-600">
-              <span className="font-semibold text-neutral-900">{wishlist.items.length}</span> item{wishlist.items.length !== 1 ? 's' : ''} in your wishlist
+            <div className="text-sm text-neutral-600 dark:text-neutral-400">
+              <span className="font-semibold text-neutral-900 dark:text-neutral-50">{wishlist.items.length}</span> item{wishlist.items.length !== 1 ? 's' : ''} in your wishlist
             </div>
           )}
         </div>
@@ -354,10 +356,10 @@ export const Dashboard: React.FC = () => {
             </SortableContext>
           </DndContext>
         ) : (
-          <div className="text-center py-16 card card-lg shadow-sm border-2 border-dashed border-neutral-300">
+          <div className="text-center py-16 card card-lg shadow-sm border-2 border-dashed border-neutral-300 dark:border-neutral-600">
             <span className="text-6xl block mb-4">🎁</span>
-            <h3 className="text-2xl font-bold text-neutral-900 mb-2">Your wishlist is empty</h3>
-            <p className="text-neutral-600 mb-6">Start adding items to create your Christmas wishlist</p>
+            <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">Your wishlist is empty</h3>
+            <p className="text-neutral-600 dark:text-neutral-400 mb-6">Start adding items to create your Christmas wishlist</p>
             <button
               onClick={handleAddClick}
               className="btn btn-primary btn-lg inline-block"

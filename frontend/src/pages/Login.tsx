@@ -26,23 +26,23 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         {/* Logo Section */}
         <div className="text-center mb-8 animate-fade-in">
           <div className="text-6xl mb-4">🎄</div>
-          <h1 className="text-4xl font-bold text-neutral-900 mb-2">
+          <h1 className="text-4xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">
             Christmas
             <br />
             Wishlist
           </h1>
-          <p className="text-neutral-600 text-base">Share your gift desires with loved ones</p>
+          <p className="text-neutral-600 dark:text-neutral-400 text-base">Share your gift desires with loved ones</p>
         </div>
 
         {/* Card */}
-        <div className="card card-lg shadow-xl border-2 border-neutral-200 animate-slide-up">
-          <h2 className="text-2xl font-bold text-neutral-900 mb-1">Welcome Back</h2>
-          <p className="text-neutral-600 mb-6">Sign in to your account to continue</p>
+        <div className="card card-lg shadow-xl border-2 border-neutral-200 dark:border-neutral-700 animate-slide-up">
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50 mb-1">Welcome Back</h2>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-6">Sign in to your account to continue</p>
 
           {error && (
             <div className="alert alert-error mb-6">
@@ -56,7 +56,7 @@ export const Login: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-neutral-900 mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2">
                 Email Address
               </label>
               <input
@@ -71,7 +71,7 @@ export const Login: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-neutral-900 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2">
                 Password
               </label>
               <input
@@ -103,11 +103,11 @@ export const Login: React.FC = () => {
 
           <div className="divider my-6"></div>
 
-          <p className="text-center text-neutral-700">
+          <p className="text-center text-neutral-700 dark:text-neutral-300">
             Don't have an account?{' '}
             <Link
               to="/register"
-              className="font-semibold text-primary-600 hover:text-primary-700 hover:underline transition-colors"
+              className="font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline transition-colors"
             >
               Create one
             </Link>
@@ -115,7 +115,7 @@ export const Login: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-neutral-600 mt-6">
+        <p className="text-center text-sm text-neutral-600 dark:text-neutral-400 mt-6">
           🎁 Make gift-giving easy and magical
         </p>
       </div>
