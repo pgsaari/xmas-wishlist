@@ -37,17 +37,17 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
 
   return (
     <div>
-      <h3 className="text-2xl font-bold text-neutral-900 mb-1">
+      <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50 mb-1">
         {initialItem ? '✏️ Edit Item' : '🎁 Add New Item'}
       </h3>
-      <p className="text-neutral-600 text-sm mb-6">
+      <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-6">
         {initialItem ? 'Update your wish' : 'Add something you want'}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-semibold text-neutral-900 mb-2">
-            Item Name <span className="text-primary-600">*</span>
+          <label className="block text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2">
+            Item Name <span className="text-primary-600 dark:text-primary-400">*</span>
           </label>
           <input
             type="text"
@@ -60,7 +60,7 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-neutral-900 mb-2">Description</label>
+          <label className="block text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -72,9 +72,9 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-neutral-900 mb-2">Estimated Price</label>
+            <label className="block text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2">Estimated Price</label>
             <div className="flex items-center">
-              <span className="text-neutral-600 mr-2">$</span>
+              <span className="text-neutral-600 dark:text-neutral-400 mr-2">$</span>
               <input
                 type="number"
                 step="0.01"
@@ -88,7 +88,7 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-neutral-900 mb-3">Priority Level</label>
+            <label className="block text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-3">Priority Level</label>
             <div className="flex items-center gap-2 flex-wrap">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -105,7 +105,7 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
                   ⭐
                 </button>
               ))}
-              <span className="text-sm font-medium text-neutral-600 ml-1">
+              <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400 ml-1">
                 {parseInt(rank) === 1 && 'Low'}
                 {parseInt(rank) === 2 && 'Low-Medium'}
                 {parseInt(rank) === 3 && 'Medium'}
@@ -117,7 +117,7 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-neutral-900 mb-2">Product Link</label>
+          <label className="block text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2">Product Link</label>
           <div className="relative">
             <input
               type="url"
@@ -129,15 +129,15 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
             />
             {isLoadingMetadata && link && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-600 border-t-transparent"></div>
-                <span className="text-xs text-primary-600 font-medium">Fetching metadata...</span>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-600 dark:border-primary-400 border-t-transparent"></div>
+                <span className="text-xs text-primary-600 dark:text-primary-400 font-medium">Fetching metadata...</span>
               </div>
             )}
           </div>
-          <p className="text-xs text-neutral-500 mt-1">Share where people can find this item</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Share where people can find this item</p>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
+        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
           <button
             type="button"
             onClick={onCancel}

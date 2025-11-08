@@ -46,10 +46,10 @@ export const PublicWishlist: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 flex items-center justify-center">
         <div className="text-center">
           <div className="spinner mx-auto mb-4"></div>
-          <p className="text-neutral-600 font-medium">Loading wishlist...</p>
+          <p className="text-neutral-600 dark:text-neutral-400 font-medium">Loading wishlist...</p>
         </div>
       </div>
     );
@@ -57,11 +57,11 @@ export const PublicWishlist: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 flex items-center justify-center p-4">
         <div className="card card-lg shadow-lg text-center max-w-md">
           <span className="text-6xl block mb-4">❌</span>
-          <h2 className="text-2xl font-bold text-neutral-900 mb-2">Wishlist Not Found</h2>
-          <p className="text-neutral-600 mb-6">{error}</p>
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">Wishlist Not Found</h2>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-6">{error}</p>
           <a href="/" className="btn btn-primary">
             Return Home
           </a>
@@ -71,13 +71,13 @@ export const PublicWishlist: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
       {/* Header */}
-      <div className="bg-white border-b border-neutral-200 shadow-sm">
+      <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
           <div className="text-5xl mb-4">🎄</div>
-          <h1 className="text-4xl font-bold text-neutral-900 mb-2">{wishlist?.title}</h1>
-          <p className="text-neutral-600 text-lg">Christmas Wishlist</p>
+          <h1 className="text-4xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">{wishlist?.title}</h1>
+          <p className="text-neutral-600 dark:text-neutral-400 text-lg">Christmas Wishlist</p>
         </div>
       </div>
 
@@ -88,26 +88,26 @@ export const PublicWishlist: React.FC = () => {
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="card card-compact text-center">
-                <p className="text-3xl font-bold text-primary-600">{wishlist.items.length}</p>
-                <p className="text-sm text-neutral-600">Items</p>
+                <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">{wishlist.items.length}</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Items</p>
               </div>
               <div className="card card-compact text-center">
-                <p className="text-3xl font-bold text-secondary-600">
+                <p className="text-3xl font-bold text-secondary-600 dark:text-secondary-400">
                   {wishlist.items.filter(i => i.is_claimed).length}
                 </p>
-                <p className="text-sm text-neutral-600">Claimed</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Claimed</p>
               </div>
               <div className="card card-compact text-center">
-                <p className="text-3xl font-bold text-accent-600">
+                <p className="text-3xl font-bold text-accent-600 dark:text-accent-400">
                   {wishlist.items.filter(i => !i.is_claimed).length}
                 </p>
-                <p className="text-sm text-neutral-600">Available</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Available</p>
               </div>
               <div className="card card-compact text-center">
-                <p className="text-3xl font-bold text-neutral-600">
+                <p className="text-3xl font-bold text-neutral-600 dark:text-neutral-400">
                   ${wishlist.items.reduce((sum, i) => sum + (i.price || 0), 0).toFixed(0)}
                 </p>
-                <p className="text-sm text-neutral-600">Total Value</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Value</p>
               </div>
             </div>
 
@@ -124,7 +124,7 @@ export const PublicWishlist: React.FC = () => {
                     <div
                       key={item.id}
                       className={`card card-normal group transition-all duration-300 ${
-                        item.is_claimed ? 'opacity-60 bg-neutral-50' : 'hover:shadow-lg'
+                        item.is_claimed ? 'opacity-60 bg-neutral-50 dark:bg-neutral-900/50' : 'hover:shadow-lg'
                       } animate-fade-in`}
                     >
                       {/* Product Image */}
@@ -140,7 +140,7 @@ export const PublicWishlist: React.FC = () => {
                               <img
                                 src={item.image_url}
                                 alt={displayName}
-                                className="w-full h-48 object-cover rounded-lg border border-neutral-200"
+                                className="w-full h-48 object-cover rounded-lg border border-neutral-200 dark:border-neutral-700"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
                                 }}
@@ -150,7 +150,7 @@ export const PublicWishlist: React.FC = () => {
                             <img
                               src={item.image_url}
                               alt={displayName}
-                              className="w-full h-48 object-cover rounded-lg border border-neutral-200"
+                              className="w-full h-48 object-cover rounded-lg border border-neutral-200 dark:border-neutral-700"
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none';
                               }}
@@ -160,7 +160,7 @@ export const PublicWishlist: React.FC = () => {
                       )}
 
                       <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-xl font-bold text-neutral-900 flex-1 leading-tight">{displayName}</h3>
+                        <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-50 flex-1 leading-tight">{displayName}</h3>
                         <div className="flex items-center gap-2 ml-2">
                           {hasError && (
                             <div
@@ -179,19 +179,19 @@ export const PublicWishlist: React.FC = () => {
                       </div>
 
                       {item.description && (
-                        <p className="text-neutral-600 text-sm mb-4 line-clamp-2">{item.description}</p>
+                        <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-4 line-clamp-2">{item.description}</p>
                       )}
 
                       {displayPrice !== undefined && (
                         <div className="flex items-baseline gap-2 mb-3">
-                          <span className="text-2xl font-bold text-secondary-600">${displayPrice.toFixed(2)}</span>
-                          <span className="text-xs text-neutral-500">estimated</span>
+                          <span className="text-2xl font-bold text-secondary-600 dark:text-secondary-400">${displayPrice.toFixed(2)}</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">estimated</span>
                         </div>
                       )}
 
                       {/* Retailer */}
                       {item.retailer && (
-                        <p className="text-sm text-neutral-500 mb-2">from {item.retailer}</p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">from {item.retailer}</p>
                       )}
 
                       {item.link && (
@@ -206,9 +206,9 @@ export const PublicWishlist: React.FC = () => {
                         </a>
                       )}
 
-                      <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+                      <div className="flex items-center justify-between pt-4 border-t border-neutral-100 dark:border-neutral-700">
                         <div className="flex items-center gap-1">
-                          <span className="text-xs font-medium text-neutral-600">Priority:</span>
+                          <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Priority:</span>
                           <span className="text-base">{'⭐'.repeat(Math.max(1, Math.min(5, item.rank)))}</span>
                         </div>
 
@@ -217,7 +217,7 @@ export const PublicWishlist: React.FC = () => {
                           disabled={item.is_claimed}
                           className={`btn btn-sm ${
                             item.is_claimed
-                              ? 'bg-neutral-200 text-neutral-500 cursor-not-allowed'
+                              ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 cursor-not-allowed'
                               : 'btn-secondary hover:scale-105'
                           }`}
                         >
@@ -230,10 +230,10 @@ export const PublicWishlist: React.FC = () => {
             </div>
           </>
         ) : (
-          <div className="text-center py-16 card card-lg shadow-sm border-2 border-dashed border-neutral-300">
+          <div className="text-center py-16 card card-lg shadow-sm border-2 border-dashed border-neutral-300 dark:border-neutral-600">
             <span className="text-6xl block mb-4">📭</span>
-            <h3 className="text-2xl font-bold text-neutral-900 mb-2">This wishlist is empty</h3>
-            <p className="text-neutral-600">Come back later to see what they'd like!</p>
+            <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">This wishlist is empty</h3>
+            <p className="text-neutral-600 dark:text-neutral-400">Come back later to see what they'd like!</p>
           </div>
         )}
       </div>

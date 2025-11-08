@@ -43,18 +43,18 @@ export const SortableItemCard: React.FC<SortableItemCardProps> = ({
     >
       {/* Drop indicator - shows where item will be dropped */}
       {isOver && !isDragging && (
-        <div className="absolute inset-0 border-2 border-primary-500 border-dashed rounded-lg z-20 bg-primary-50/50 pointer-events-none" />
+        <div className="absolute inset-0 border-2 border-primary-500 dark:border-primary-400 border-dashed rounded-lg z-20 bg-primary-50/50 dark:bg-primary-900/30 pointer-events-none" />
       )}
       
       {/* Drag handle - attach listeners here for reliable dragging */}
       {isEditable && (
         <div
           {...(isEditable ? listeners : {})}
-          className="absolute top-3 right-3 z-30 bg-white/95 hover:bg-white border border-neutral-300 rounded-lg p-2 cursor-grab active:cursor-grabbing shadow-md hover:shadow-lg transition-all opacity-0 group-hover:opacity-100 pointer-events-auto touch-none"
+          className="absolute top-3 right-3 z-30 bg-white/95 dark:bg-neutral-800/95 hover:bg-white dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-lg p-2 cursor-grab active:cursor-grabbing shadow-md hover:shadow-lg transition-all opacity-0 group-hover:opacity-100 pointer-events-auto touch-none"
           title="Drag to reorder"
         >
           <svg
-            className="w-5 h-5 text-neutral-600"
+            className="w-5 h-5 text-neutral-600 dark:text-neutral-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

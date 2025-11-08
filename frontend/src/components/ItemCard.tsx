@@ -60,7 +60,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               <img
                 src={localItem.image_url}
                 alt={displayName}
-                className="w-full h-48 object-cover rounded-lg border border-neutral-200"
+                className="w-full h-48 object-cover rounded-lg border border-neutral-200 dark:border-neutral-700"
                 onError={(e) => {
                   // Hide image if it fails to load
                   e.currentTarget.style.display = 'none';
@@ -71,7 +71,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             <img
               src={localItem.image_url}
               alt={displayName}
-              className="w-full h-48 object-cover rounded-lg border border-neutral-200"
+              className="w-full h-48 object-cover rounded-lg border border-neutral-200 dark:border-neutral-700"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
               }}
@@ -81,7 +81,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       )}
 
       <div className="flex justify-between items-start mb-3">
-        <h3 className="text-xl font-bold text-neutral-900 flex-1 leading-tight">{displayName}</h3>
+        <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-50 flex-1 leading-tight">{displayName}</h3>
 
         {/* Refresh indicator */}
         {isRefreshing && (
@@ -104,19 +104,19 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       </div>
 
       {localItem.description && (
-        <p className="text-neutral-600 text-sm mb-4 line-clamp-2">{localItem.description}</p>
+        <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-4 line-clamp-2">{localItem.description}</p>
       )}
 
       {displayPrice !== undefined && (
         <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-2xl font-bold text-secondary-600">${displayPrice.toFixed(2)}</span>
-          <span className="text-xs text-neutral-500">estimated price</span>
+          <span className="text-2xl font-bold text-secondary-600 dark:text-secondary-400">${displayPrice.toFixed(2)}</span>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">estimated price</span>
         </div>
       )}
 
       {/* Retailer */}
       {localItem.retailer && (
-        <p className="text-sm text-neutral-500 mb-2">from {localItem.retailer}</p>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">from {localItem.retailer}</p>
       )}
 
       {localItem.link && (
@@ -131,9 +131,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </a>
       )}
 
-      <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+      <div className="flex items-center justify-between pt-4 border-t border-neutral-100 dark:border-neutral-700">
         <div className="flex items-center gap-1">
-          <span className="text-xs font-medium text-neutral-600">Priority:</span>
+          <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">Priority:</span>
           <span className="text-base" title={`Priority level ${localItem.rank}`}>
             {'⭐'.repeat(Math.max(1, Math.min(5, localItem.rank)))}
           </span>

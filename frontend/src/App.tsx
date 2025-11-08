@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { DarkModeProvider } from './context/DarkModeContext';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
@@ -13,8 +14,8 @@ const AppRoutes: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900">
+        <div className="text-lg text-neutral-900 dark:text-neutral-50">Loading...</div>
       </div>
     );
   }
@@ -45,12 +46,14 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <AppRoutes />
-        <UpdateAvailable />
-      </AuthProvider>
-    </Router>
+    <DarkModeProvider>
+      <Router>
+        <AuthProvider>
+          <AppRoutes />
+          <UpdateAvailable />
+        </AuthProvider>
+      </Router>
+    </DarkModeProvider>
   );
 };
 

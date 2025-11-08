@@ -18,13 +18,13 @@ export const ClaimModal: React.FC<ClaimModalProps> = ({ itemName, onClaim, onClo
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="card card-lg shadow-2xl max-w-md w-full animate-slide-up border-2 border-neutral-200">
+    <div className="fixed inset-0 bg-black bg-opacity-40 dark:bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="card card-lg shadow-2xl max-w-md w-full animate-slide-up border-2 border-neutral-200 dark:border-neutral-700">
         <div className="flex items-start gap-3 mb-4">
           <span className="text-3xl">🎁</span>
           <div>
-            <h2 className="text-2xl font-bold text-neutral-900">Claim Item</h2>
-            <p className="text-neutral-600 text-sm">Secure this gift for {itemName}</p>
+            <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">Claim Item</h2>
+            <p className="text-neutral-600 dark:text-neutral-400 text-sm">Secure this gift for {itemName}</p>
           </div>
         </div>
 
@@ -40,7 +40,7 @@ export const ClaimModal: React.FC<ClaimModalProps> = ({ itemName, onClaim, onClo
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-semibold text-neutral-900 mb-2">Your Name *</label>
+            <label className="block text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2">Your Name *</label>
             <input
               type="text"
               value={buyerName}
@@ -52,7 +52,7 @@ export const ClaimModal: React.FC<ClaimModalProps> = ({ itemName, onClaim, onClo
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-neutral-900 mb-2">Your Email *</label>
+            <label className="block text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-2">Your Email *</label>
             <input
               type="email"
               value={buyerEmail}
@@ -61,10 +61,10 @@ export const ClaimModal: React.FC<ClaimModalProps> = ({ itemName, onClaim, onClo
               placeholder="you@example.com"
               className="input"
             />
-            <p className="text-xs text-neutral-500 mt-2">Used to confirm your claim</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">Used to confirm your claim</p>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
             <button
               type="button"
               onClick={onClose}
