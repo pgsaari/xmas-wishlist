@@ -29,6 +29,17 @@ interface DatabaseSchema {
     link?: string;
     rank: number;
     created_at: string;
+
+    // Existing fields - sync with DB
+    retailer?: string;
+    snapshot_date?: string;
+
+    // New metadata fields
+    image_url?: string;
+    fetched_name?: string;
+    fetched_price?: number;
+    last_fetched_at?: string;
+    fetch_error?: string;
   }>;
   claims: Array<{
     id: number;

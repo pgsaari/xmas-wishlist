@@ -23,6 +23,17 @@ export interface Item {
   link?: string;
   rank: number;
   created_at: string;
+
+  // Existing fields - sync with DB
+  retailer?: string;
+  snapshot_date?: string;
+
+  // New metadata fields
+  image_url?: string;
+  fetched_name?: string;
+  fetched_price?: number;
+  last_fetched_at?: string;
+  fetch_error?: string;
 }
 
 export interface Claim {
@@ -75,5 +86,15 @@ export interface ClaimItemRequest {
 
 export interface UpdateWishlistRequest {
   title?: string;
+}
+
+// Metadata Service Types
+export interface ProductMetadata {
+  name: string | null;
+  price: number | null;
+  image_url: string | null;
+  retailer: string;
+  success: boolean;
+  error?: string;
 }
 
