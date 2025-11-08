@@ -46,92 +46,151 @@ export const PublicWishlist: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50 flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4"></div>
+          <p className="text-neutral-600 font-medium">Loading wishlist...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50 flex items-center justify-center">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 flex items-center justify-center p-4">
+        <div className="card card-lg shadow-lg text-center max-w-md">
+          <span className="text-6xl block mb-4">❌</span>
+          <h2 className="text-2xl font-bold text-neutral-900 mb-2">Wishlist Not Found</h2>
+          <p className="text-neutral-600 mb-6">{error}</p>
+          <a href="/" className="btn btn-primary">
+            Return Home
+          </a>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-4xl font-bold text-center mb-2 text-red-600">🎄 {wishlist?.title}</h1>
-        <p className="text-center text-gray-600 mb-8">Christmas Wishlist</p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {wishlist?.items
-            .sort((a, b) => b.rank - a.rank)
-            .map((item) => (
-              <div
-                key={item.id}
-                className={`bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow ${
-                  item.is_claimed ? 'opacity-75' : ''
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-semibold flex-1">{item.name}</h3>
-                  {item.is_claimed && (
-                    <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded ml-2">
-                      Already Claimed
-                    </span>
-                  )}
-                </div>
-                {item.description && <p className="text-gray-600 mb-3">{item.description}</p>}
-                {item.price && (
-                  <p className="text-lg font-bold text-green-600 mb-2">${item.price.toFixed(2)}</p>
-                )}
-                {item.link && (
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline mb-4 block"
-                  >
-                    View Item →
-                  </a>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">
-                    Priority: {'⭐'.repeat(Math.max(1, item.rank))}
-                  </span>
-                  <button
-                    onClick={() => setClaimingItemId(item.id)}
-                    disabled={item.is_claimed}
-                    className={`px-4 py-2 rounded-md font-semibold ${
-                      item.is_claimed
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-green-600 text-white hover:bg-green-700'
-                    }`}
-                  >
-                    {item.is_claimed ? 'Already Claimed' : "I'll Buy This"}
-                  </button>
-                </div>
-              </div>
-            ))}
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50">
+      {/* Header */}
+      <div className="bg-white border-b border-neutral-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+          <div className="text-5xl mb-4">🎄</div>
+          <h1 className="text-4xl font-bold text-neutral-900 mb-2">{wishlist?.title}</h1>
+          <p className="text-neutral-600 text-lg">Christmas Wishlist</p>
         </div>
+      </div>
 
-        {wishlist?.items.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">This wishlist is empty.</p>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {wishlist && wishlist.items.length > 0 ? (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="card card-compact text-center">
+                <p className="text-3xl font-bold text-primary-600">{wishlist.items.length}</p>
+                <p className="text-sm text-neutral-600">Items</p>
+              </div>
+              <div className="card card-compact text-center">
+                <p className="text-3xl font-bold text-secondary-600">
+                  {wishlist.items.filter(i => i.is_claimed).length}
+                </p>
+                <p className="text-sm text-neutral-600">Claimed</p>
+              </div>
+              <div className="card card-compact text-center">
+                <p className="text-3xl font-bold text-accent-600">
+                  {wishlist.items.filter(i => !i.is_claimed).length}
+                </p>
+                <p className="text-sm text-neutral-600">Available</p>
+              </div>
+              <div className="card card-compact text-center">
+                <p className="text-3xl font-bold text-neutral-600">
+                  ${wishlist.items.reduce((sum, i) => sum + (i.price || 0), 0).toFixed(0)}
+                </p>
+                <p className="text-sm text-neutral-600">Total Value</p>
+              </div>
+            </div>
+
+            {/* Items Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {wishlist.items
+                .sort((a, b) => b.rank - a.rank)
+                .map((item) => (
+                  <div
+                    key={item.id}
+                    className={`card card-normal group transition-all duration-300 ${
+                      item.is_claimed ? 'opacity-60 bg-neutral-50' : 'hover:shadow-lg'
+                    } animate-fade-in`}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="text-xl font-bold text-neutral-900 flex-1 leading-tight">{item.name}</h3>
+                      {item.is_claimed && (
+                        <span className="badge badge-secondary ml-2">Already Claimed</span>
+                      )}
+                    </div>
+
+                    {item.description && (
+                      <p className="text-neutral-600 text-sm mb-4 line-clamp-2">{item.description}</p>
+                    )}
+
+                    {item.price && (
+                      <div className="flex items-baseline gap-2 mb-3">
+                        <span className="text-2xl font-bold text-secondary-600">${item.price.toFixed(2)}</span>
+                        <span className="text-xs text-neutral-500">estimated</span>
+                      </div>
+                    )}
+
+                    {item.link && (
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-sm font-semibold text-primary-600 hover:text-primary-700 mb-4 hover:underline transition-colors"
+                      >
+                        View Item
+                        <span className="ml-1.5">→</span>
+                      </a>
+                    )}
+
+                    <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-medium text-neutral-600">Priority:</span>
+                        <span className="text-base">{'⭐'.repeat(Math.max(1, Math.min(5, item.rank)))}</span>
+                      </div>
+
+                      <button
+                        onClick={() => setClaimingItemId(item.id)}
+                        disabled={item.is_claimed}
+                        className={`btn btn-sm ${
+                          item.is_claimed
+                            ? 'bg-neutral-200 text-neutral-500 cursor-not-allowed'
+                            : 'btn-secondary hover:scale-105'
+                        }`}
+                      >
+                        {item.is_claimed ? '✓ Claimed' : '🛍️ Claim'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-16 card card-lg shadow-sm border-2 border-dashed border-neutral-300">
+            <span className="text-6xl block mb-4">📭</span>
+            <h3 className="text-2xl font-bold text-neutral-900 mb-2">This wishlist is empty</h3>
+            <p className="text-neutral-600">Come back later to see what they'd like!</p>
           </div>
         )}
-
-        {claimingItemId && (
-          <ClaimModal
-            itemName={wishlist?.items.find((i) => i.id === claimingItemId)?.name || ''}
-            onClaim={handleClaim}
-            onClose={() => setClaimingItemId(null)}
-          />
-        )}
       </div>
+
+      {/* Claim Modal */}
+      {claimingItemId && (
+        <ClaimModal
+          itemName={wishlist?.items.find((i) => i.id === claimingItemId)?.name || ''}
+          onClaim={handleClaim}
+          onClose={() => setClaimingItemId(null)}
+        />
+      )}
     </div>
   );
 };

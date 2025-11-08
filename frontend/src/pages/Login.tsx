@@ -26,51 +26,97 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-green-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-center mb-8 text-red-600">🎄 Christmas Wishlist</h1>
-        <h2 className="text-2xl font-semibold text-center mb-6">Login</h2>
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-red-600 hover:underline">
-            Register here
-          </Link>
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-neutral-50 to-secondary-50 flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md">
+        {/* Logo Section */}
+        <div className="text-center mb-8 animate-fade-in">
+          <div className="text-6xl mb-4">🎄</div>
+          <h1 className="text-4xl font-bold text-neutral-900 mb-2">
+            Christmas
+            <br />
+            Wishlist
+          </h1>
+          <p className="text-neutral-600 text-base">Share your gift desires with loved ones</p>
+        </div>
+
+        {/* Card */}
+        <div className="card card-lg shadow-xl border-2 border-neutral-200 animate-slide-up">
+          <h2 className="text-2xl font-bold text-neutral-900 mb-1">Welcome Back</h2>
+          <p className="text-neutral-600 mb-6">Sign in to your account to continue</p>
+
+          {error && (
+            <div className="alert alert-error mb-6">
+              <span className="text-lg">⚠️</span>
+              <div>
+                <p className="font-semibold">Login Error</p>
+                <p className="text-sm">{error}</p>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold text-neutral-900 mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="you@example.com"
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-semibold text-neutral-900 mb-2">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="input"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary w-full btn-lg font-semibold disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <span className="inline-block h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                  Logging in...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+          </form>
+
+          <div className="divider my-6"></div>
+
+          <p className="text-center text-neutral-700">
+            Don't have an account?{' '}
+            <Link
+              to="/register"
+              className="font-semibold text-primary-600 hover:text-primary-700 hover:underline transition-colors"
+            >
+              Create one
+            </Link>
+          </p>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-sm text-neutral-600 mt-6">
+          🎁 Make gift-giving easy and magical
         </p>
       </div>
     </div>

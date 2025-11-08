@@ -12,7 +12,7 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
   const [description, setDescription] = useState(initialItem?.description || '');
   const [price, setPrice] = useState(initialItem?.price?.toString() || '');
   const [link, setLink] = useState(initialItem?.link || '');
-  const [rank, setRank] = useState(initialItem?.rank?.toString() || '0');
+  const [rank, setRank] = useState(initialItem?.rank?.toString() || '3');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,74 +26,111 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-semibold mb-4">{initialItem ? 'Edit Item' : 'Add Item'}</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div>
+      <h3 className="text-2xl font-bold text-neutral-900 mb-1">
+        {initialItem ? '✏️ Edit Item' : '🎁 Add New Item'}
+      </h3>
+      <p className="text-neutral-600 text-sm mb-6">
+        {initialItem ? 'Update your wish' : 'Add something you want'}
+      </p>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Item Name *</label>
+          <label className="block text-sm font-semibold text-neutral-900 mb-2">
+            Item Name <span className="text-primary-600">*</span>
+          </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+            placeholder="e.g., Sony WH-1000XM5 Headphones"
+            className="input"
           />
         </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-semibold text-neutral-900 mb-2">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+            placeholder="Tell people why you want this item..."
+            className="input resize-none"
             rows={3}
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-            <input
-              type="number"
-              step="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
+            <label className="block text-sm font-semibold text-neutral-900 mb-2">Estimated Price</label>
+            <div className="flex items-center">
+              <span className="text-neutral-600 mr-2">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="99.99"
+                className="input flex-1"
+              />
+            </div>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Priority (0-5)</label>
-            <input
-              type="number"
-              min="0"
-              max="5"
-              value={rank}
-              onChange={(e) => setRank(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
+            <label className="block text-sm font-semibold text-neutral-900 mb-3">Priority Level</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRank(star.toString())}
+                  className={`text-2xl transition-all duration-200 transform leading-none ${
+                    star <= parseInt(rank)
+                      ? 'scale-110'
+                      : 'opacity-40 hover:opacity-60'
+                  } hover:scale-125 cursor-pointer`}
+                  title={`Priority level ${star}`}
+                >
+                  ⭐
+                </button>
+              ))}
+              <span className="text-sm font-medium text-neutral-600 ml-1">
+                {parseInt(rank) === 1 && 'Low'}
+                {parseInt(rank) === 2 && 'Low-Medium'}
+                {parseInt(rank) === 3 && 'Medium'}
+                {parseInt(rank) === 4 && 'High'}
+                {parseInt(rank) === 5 && 'Very High'}
+              </span>
+            </div>
           </div>
         </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Link</label>
+          <label className="block text-sm font-semibold text-neutral-900 mb-2">Product Link</label>
           <input
             type="url"
             value={link}
             onChange={(e) => setLink(e.target.value)}
-            placeholder="https://..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+            placeholder="https://amazon.com/..."
+            className="input"
           />
+          <p className="text-xs text-neutral-500 mt-1">Share where people can find this item</p>
         </div>
-        <div className="flex justify-end space-x-3">
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            className="btn btn-outline"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            className="btn btn-primary"
           >
-            {initialItem ? 'Update' : 'Add'} Item
+            {initialItem ? '💾 Update Item' : '➕ Add Item'}
           </button>
         </div>
       </form>
