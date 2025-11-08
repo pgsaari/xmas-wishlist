@@ -1,15 +1,11 @@
-import React, { useState } from 'react';
-import { Item, CreateItemRequest } from '../api/wishlists';
-import { ItemForm } from './ItemForm';
+import React from 'react';
+import { Item } from '../api/wishlists';
 
 interface ItemCardProps {
   item: Item;
   isEditable: boolean;
   onEdit: () => void;
   onDelete: () => void;
-  isEditing: boolean;
-  onSave: (item: CreateItemRequest) => void;
-  onCancel: () => void;
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({
@@ -17,27 +13,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   isEditable,
   onEdit,
   onDelete,
-  isEditing,
-  onSave,
-  onCancel,
 }) => {
-  if (isEditing) {
-    return (
-      <div className="card card-normal animate-slide-up md:col-span-2 lg:col-span-3">
-        <ItemForm
-          initialItem={{
-            name: item.name,
-            description: item.description,
-            price: item.price,
-            link: item.link,
-            rank: item.rank,
-          }}
-          onSubmit={onSave}
-          onCancel={onCancel}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="card card-normal group hover:shadow-lg animate-fade-in">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { wishlistApi, Wishlist, CreateItemRequest } from '../api/wishlists';
-import { ItemForm } from '../components/ItemForm';
+import { wishlistApi, Wishlist, CreateItemRequest, Item } from '../api/wishlists';
+import { ItemModal } from '../components/ItemModal';
 import { ItemCard } from '../components/ItemCard';
 import { ShareModal } from '../components/ShareModal';
 
@@ -10,8 +10,8 @@ export const Dashboard: React.FC = () => {
   const [wishlist, setWishlist] = useState<Wishlist | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showItemForm, setShowItemForm] = useState(false);
-  const [editingItem, setEditingItem] = useState<number | null>(null);
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
 
@@ -35,20 +35,37 @@ export const Dashboard: React.FC = () => {
     try {
       await wishlistApi.addItem(item);
       await loadWishlist();
-      setShowItemForm(false);
+      setShowItemModal(false);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to add item');
     }
   };
 
-  const handleUpdateItem = async (itemId: number, item: CreateItemRequest) => {
+  const handleUpdateItem = async (item: CreateItemRequest) => {
+    if (!editingItem) return;
     try {
-      await wishlistApi.updateItem(itemId, item);
+      await wishlistApi.updateItem(editingItem.id, item);
       await loadWishlist();
       setEditingItem(null);
+      setShowItemModal(false);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to update item');
     }
+  };
+
+  const handleEditClick = (item: Item) => {
+    setEditingItem(item);
+    setShowItemModal(true);
+  };
+
+  const handleAddClick = () => {
+    setEditingItem(null);
+    setShowItemModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowItemModal(false);
+    setEditingItem(null);
   };
 
   const handleDeleteItem = async (itemId: number) => {
@@ -155,14 +172,12 @@ export const Dashboard: React.FC = () => {
 
         {/* Add Item Button */}
         <div className="mb-8 flex items-center gap-4">
-          {!showItemForm && (
-            <button
-              onClick={() => setShowItemForm(true)}
-              className="btn btn-primary btn-lg"
-            >
-              ➕ Add Item
-            </button>
-          )}
+          <button
+            onClick={handleAddClick}
+            className="btn btn-primary btn-lg"
+          >
+            ➕ Add Item
+          </button>
           {wishlist && wishlist.items.length > 0 && (
             <div className="text-sm text-neutral-600">
               <span className="font-semibold text-neutral-900">{wishlist.items.length}</span> item{wishlist.items.length !== 1 ? 's' : ''} in your wishlist
@@ -170,31 +185,18 @@ export const Dashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Item Form */}
-        {showItemForm && (
-          <div className="mb-8 card card-lg shadow-lg animate-slide-up">
-            <ItemForm
-              onSubmit={handleAddItem}
-              onCancel={() => setShowItemForm(false)}
-            />
-          </div>
-        )}
-
         {/* Items Grid */}
         {wishlist && wishlist.items.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {wishlist.items
               .sort((a, b) => b.rank - a.rank)
-              .map((item, index) => (
+              .map((item) => (
                 <ItemCard
                   key={item.id}
                   item={item}
                   isEditable={true}
-                  onEdit={() => setEditingItem(item.id)}
+                  onEdit={() => handleEditClick(item)}
                   onDelete={() => handleDeleteItem(item.id)}
-                  isEditing={editingItem === item.id}
-                  onSave={(updatedItem) => handleUpdateItem(item.id, updatedItem)}
-                  onCancel={() => setEditingItem(null)}
                 />
               ))}
           </div>
@@ -204,7 +206,7 @@ export const Dashboard: React.FC = () => {
             <h3 className="text-2xl font-bold text-neutral-900 mb-2">Your wishlist is empty</h3>
             <p className="text-neutral-600 mb-6">Start adding items to create your Christmas wishlist</p>
             <button
-              onClick={() => setShowItemForm(true)}
+              onClick={handleAddClick}
               className="btn btn-primary btn-lg inline-block"
             >
               ➕ Add First Item
@@ -212,6 +214,20 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Item Modal */}
+      <ItemModal
+        isOpen={showItemModal}
+        onClose={handleModalClose}
+        onSubmit={editingItem ? handleUpdateItem : handleAddItem}
+        initialItem={editingItem ? {
+          name: editingItem.name,
+          description: editingItem.description,
+          price: editingItem.price,
+          link: editingItem.link,
+          rank: editingItem.rank,
+        } : undefined}
+      />
 
       {/* Share Modal */}
       {showShareModal && (
