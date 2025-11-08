@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import db from '../database';
+import { dbHelpers } from '../database';
 import { hashPassword, comparePassword, generateToken } from '../auth';
 import { CreateUserRequest, LoginRequest } from '../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,7 +16,7 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     // Check if user already exists
-    const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const existingUser = dbHelpers.getUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
@@ -25,25 +25,32 @@ router.post('/register', async (req: Request, res: Response) => {
     const passwordHash = await hashPassword(password);
 
     // Create user
-    const result = db.prepare('INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)').run(
+    const newUser = await dbHelpers.createUser({
       email,
-      passwordHash,
-      name
-    );
+      password_hash: passwordHash,
+      name,
+      created_at: new Date().toISOString(),
+    });
 
     // Create default wishlist
     const shareToken = uuidv4();
-    db.prepare('INSERT INTO wishlists (user_id, share_token) VALUES (?, ?)').run(result.lastInsertRowid, shareToken);
+    await dbHelpers.createWishlist({
+      user_id: newUser.id,
+      share_token: shareToken,
+      title: 'My Christmas Wishlist',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
 
     // Generate token
-    const token = generateToken(result.lastInsertRowid as number, email);
+    const token = generateToken(newUser.id, email);
 
     res.status(201).json({
       token,
       user: {
-        id: result.lastInsertRowid,
-        email,
-        name,
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
       },
     });
   } catch (error) {
@@ -62,7 +69,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     // Find user
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+    const user = dbHelpers.getUserByEmail(email);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
