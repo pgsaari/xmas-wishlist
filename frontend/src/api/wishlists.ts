@@ -9,6 +9,17 @@ export interface Item {
   link?: string;
   rank: number;
   created_at: string;
+
+  // Existing fields - sync with DB
+  retailer?: string;
+  snapshot_date?: string;
+
+  // New metadata fields
+  image_url?: string;
+  fetched_name?: string;
+  fetched_price?: number;
+  last_fetched_at?: string;
+  fetch_error?: string;
 }
 
 export interface Wishlist {
@@ -86,5 +97,33 @@ export const wishlistApi = {
   claimItem: async (shareToken: string, itemId: number, claim: ClaimItemRequest): Promise<void> => {
     await api.post(`/wishlists/shared/${shareToken}/items/${itemId}/claim`, claim);
   },
+
+  refreshItemMetadata: async (itemId: number): Promise<Item> => {
+    const response = await api.post<Item>(`/wishlists/my-wishlist/items/${itemId}/refresh`);
+    return response.data;
+  },
 };
+
+// Helper functions (work with both Item and public item types)
+export function getDisplayName(item: { name: string; fetched_name?: string }): string {
+  return item.fetched_name || item.name;
+}
+
+export function getDisplayPrice(item: { price?: number; fetched_price?: number }): number | undefined {
+  return item.fetched_price ?? item.price;
+}
+
+export function hasMetadataError(item: { fetch_error?: string }): boolean {
+  return !!item.fetch_error;
+}
+
+export function needsRefresh(item: Item): boolean {
+  if (!item.link || !item.last_fetched_at) return false;
+
+  const lastFetch = new Date(item.last_fetched_at);
+  const now = new Date();
+  const hoursSince = (now.getTime() - lastFetch.getTime()) / (1000 * 60 * 60);
+
+  return hoursSince >= 24;
+}
 

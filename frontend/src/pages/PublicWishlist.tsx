@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { wishlistApi, PublicWishlist as PublicWishlistType } from '../api/wishlists';
+import { wishlistApi, PublicWishlist as PublicWishlistType, getDisplayName, getDisplayPrice, hasMetadataError } from '../api/wishlists';
 import { ClaimModal } from '../components/ClaimModal';
 
 export const PublicWishlist: React.FC = () => {
@@ -115,63 +115,118 @@ export const PublicWishlist: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {wishlist.items
                 .sort((a, b) => b.rank - a.rank)
-                .map((item) => (
-                  <div
-                    key={item.id}
-                    className={`card card-normal group transition-all duration-300 ${
-                      item.is_claimed ? 'opacity-60 bg-neutral-50' : 'hover:shadow-lg'
-                    } animate-fade-in`}
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="text-xl font-bold text-neutral-900 flex-1 leading-tight">{item.name}</h3>
-                      {item.is_claimed && (
-                        <span className="badge badge-secondary ml-2">Already Claimed</span>
+                .map((item) => {
+                  const displayName = getDisplayName(item);
+                  const displayPrice = getDisplayPrice(item);
+                  const hasError = hasMetadataError(item);
+
+                  return (
+                    <div
+                      key={item.id}
+                      className={`card card-normal group transition-all duration-300 ${
+                        item.is_claimed ? 'opacity-60 bg-neutral-50' : 'hover:shadow-lg'
+                      } animate-fade-in`}
+                    >
+                      {/* Product Image */}
+                      {item.image_url && (
+                        <div className="mb-4">
+                          {item.link ? (
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block hover:opacity-80 transition-opacity"
+                            >
+                              <img
+                                src={item.image_url}
+                                alt={displayName}
+                                className="w-full h-48 object-cover rounded-lg border border-neutral-200"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </a>
+                          ) : (
+                            <img
+                              src={item.image_url}
+                              alt={displayName}
+                              className="w-full h-48 object-cover rounded-lg border border-neutral-200"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          )}
+                        </div>
                       )}
-                    </div>
 
-                    {item.description && (
-                      <p className="text-neutral-600 text-sm mb-4 line-clamp-2">{item.description}</p>
-                    )}
-
-                    {item.price && (
-                      <div className="flex items-baseline gap-2 mb-3">
-                        <span className="text-2xl font-bold text-secondary-600">${item.price.toFixed(2)}</span>
-                        <span className="text-xs text-neutral-500">estimated</span>
-                      </div>
-                    )}
-
-                    {item.link && (
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-sm font-semibold text-primary-600 hover:text-primary-700 mb-4 hover:underline transition-colors"
-                      >
-                        View Item
-                        <span className="ml-1.5">→</span>
-                      </a>
-                    )}
-
-                    <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-medium text-neutral-600">Priority:</span>
-                        <span className="text-base">{'⭐'.repeat(Math.max(1, Math.min(5, item.rank)))}</span>
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="text-xl font-bold text-neutral-900 flex-1 leading-tight">{displayName}</h3>
+                        <div className="flex items-center gap-2 ml-2">
+                          {hasError && (
+                            <div
+                              className="flex-shrink-0 text-yellow-500"
+                              title={item.fetch_error}
+                            >
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                          {item.is_claimed && (
+                            <span className="badge badge-secondary">Already Claimed</span>
+                          )}
+                        </div>
                       </div>
 
-                      <button
-                        onClick={() => setClaimingItemId(item.id)}
-                        disabled={item.is_claimed}
-                        className={`btn btn-sm ${
-                          item.is_claimed
-                            ? 'bg-neutral-200 text-neutral-500 cursor-not-allowed'
-                            : 'btn-secondary hover:scale-105'
-                        }`}
-                      >
-                        {item.is_claimed ? '✓ Claimed' : '🛍️ Claim'}
-                      </button>
+                      {item.description && (
+                        <p className="text-neutral-600 text-sm mb-4 line-clamp-2">{item.description}</p>
+                      )}
+
+                      {displayPrice !== undefined && (
+                        <div className="flex items-baseline gap-2 mb-3">
+                          <span className="text-2xl font-bold text-secondary-600">${displayPrice.toFixed(2)}</span>
+                          <span className="text-xs text-neutral-500">estimated</span>
+                        </div>
+                      )}
+
+                      {/* Retailer */}
+                      {item.retailer && (
+                        <p className="text-sm text-neutral-500 mb-2">from {item.retailer}</p>
+                      )}
+
+                      {item.link && (
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-sm font-semibold text-primary-600 hover:text-primary-700 mb-4 hover:underline transition-colors"
+                        >
+                          View Item
+                          <span className="ml-1.5">→</span>
+                        </a>
+                      )}
+
+                      <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-medium text-neutral-600">Priority:</span>
+                          <span className="text-base">{'⭐'.repeat(Math.max(1, Math.min(5, item.rank)))}</span>
+                        </div>
+
+                        <button
+                          onClick={() => setClaimingItemId(item.id)}
+                          disabled={item.is_claimed}
+                          className={`btn btn-sm ${
+                            item.is_claimed
+                              ? 'bg-neutral-200 text-neutral-500 cursor-not-allowed'
+                              : 'btn-secondary hover:scale-105'
+                          }`}
+                        >
+                          {item.is_claimed ? '✓ Claimed' : '🛍️ Claim'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
           </>
         ) : (
