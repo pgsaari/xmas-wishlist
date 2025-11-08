@@ -4,6 +4,7 @@ import { wishlistApi, Wishlist, CreateItemRequest, Item } from '../api/wishlists
 import { ItemModal } from '../components/ItemModal';
 import { ItemCard } from '../components/ItemCard';
 import { ShareModal } from '../components/ShareModal';
+import { InstallPWA } from '../components/InstallPWA';
 
 export const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -125,6 +126,7 @@ export const Dashboard: React.FC = () => {
                 <span className="text-sm text-neutral-600">👤</span>
                 <span className="text-sm font-medium text-neutral-700">{user?.name}</span>
               </div>
+              <InstallPWA />
               <button
                 onClick={handleShare}
                 className="btn btn-secondary btn-sm"

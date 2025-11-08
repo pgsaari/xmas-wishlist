@@ -6,6 +6,7 @@ import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { PublicWishlist } from './pages/PublicWishlist';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { UpdateAvailable } from './components/UpdateAvailable';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -47,6 +48,7 @@ const App: React.FC = () => {
     <Router>
       <AuthProvider>
         <AppRoutes />
+        <UpdateAvailable />
       </AuthProvider>
     </Router>
   );
