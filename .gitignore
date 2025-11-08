@@ -1,6 +1,7 @@
 node_modules/
 dist/
 *.db
+db.json
 .env
 *.log
 .DS_Store
@@ -9,6 +10,7 @@ dist/
 backend/node_modules/
 backend/dist/
 backend/*.db
+backend/db.json
 backend/.env
 
 # Frontend
