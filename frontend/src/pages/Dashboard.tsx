@@ -15,6 +15,7 @@ export const Dashboard: React.FC = () => {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
 
   useEffect(() => {
     loadWishlist();
@@ -34,23 +35,31 @@ export const Dashboard: React.FC = () => {
 
   const handleAddItem = async (item: CreateItemRequest) => {
     try {
+      setIsLoadingMetadata(!!item.link);
       await wishlistApi.addItem(item);
       await loadWishlist();
       setShowItemModal(false);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to add item');
+    } finally {
+      setIsLoadingMetadata(false);
     }
   };
 
   const handleUpdateItem = async (item: CreateItemRequest) => {
     if (!editingItem) return;
     try {
+      // Show loading if link is provided and it's different from the current link
+      const linkChanged = item.link !== undefined && item.link !== editingItem.link && !!item.link;
+      setIsLoadingMetadata(linkChanged);
       await wishlistApi.updateItem(editingItem.id, item);
       await loadWishlist();
       setEditingItem(null);
       setShowItemModal(false);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to update item');
+    } finally {
+      setIsLoadingMetadata(false);
     }
   };
 
@@ -67,6 +76,7 @@ export const Dashboard: React.FC = () => {
   const handleModalClose = () => {
     setShowItemModal(false);
     setEditingItem(null);
+    setIsLoadingMetadata(false);
   };
 
   const handleDeleteItem = async (itemId: number) => {
@@ -229,6 +239,7 @@ export const Dashboard: React.FC = () => {
           link: editingItem.link,
           rank: editingItem.rank,
         } : undefined}
+        isLoadingMetadata={isLoadingMetadata}
       />
 
       {/* Share Modal */}

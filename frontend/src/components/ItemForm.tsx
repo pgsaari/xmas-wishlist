@@ -5,9 +5,10 @@ interface ItemFormProps {
   onSubmit: (item: CreateItemRequest) => void;
   onCancel: () => void;
   initialItem?: CreateItemRequest;
+  isLoadingMetadata?: boolean;
 }
 
-export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialItem }) => {
+export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialItem, isLoadingMetadata = false }) => {
   const [name, setName] = useState(initialItem?.name || '');
   const [description, setDescription] = useState(initialItem?.description || '');
   const [price, setPrice] = useState(initialItem?.price?.toString() || '');
@@ -117,13 +118,22 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
 
         <div>
           <label className="block text-sm font-semibold text-neutral-900 mb-2">Product Link</label>
-          <input
-            type="url"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            placeholder="https://amazon.com/..."
-            className="input"
-          />
+          <div className="relative">
+            <input
+              type="url"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="https://amazon.com/..."
+              className="input"
+              disabled={isLoadingMetadata}
+            />
+            {isLoadingMetadata && link && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-600 border-t-transparent"></div>
+                <span className="text-xs text-primary-600 font-medium">Fetching metadata...</span>
+              </div>
+            )}
+          </div>
           <p className="text-xs text-neutral-500 mt-1">Share where people can find this item</p>
         </div>
 
@@ -132,14 +142,23 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
             type="button"
             onClick={onCancel}
             className="btn btn-outline"
+            disabled={isLoadingMetadata}
           >
             Cancel
           </button>
           <button
             type="submit"
             className="btn btn-primary"
+            disabled={isLoadingMetadata}
           >
-            {initialItem ? '💾 Update Item' : '➕ Add Item'}
+            {isLoadingMetadata ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                {link ? 'Fetching metadata...' : (initialItem ? '💾 Updating...' : '➕ Adding...')}
+              </>
+            ) : (
+              initialItem ? '💾 Update Item' : '➕ Add Item'
+            )}
           </button>
         </div>
       </form>
