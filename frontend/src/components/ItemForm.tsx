@@ -14,6 +14,15 @@ export const ItemForm: React.FC<ItemFormProps> = ({ onSubmit, onCancel, initialI
   const [link, setLink] = useState(initialItem?.link || '');
   const [rank, setRank] = useState(initialItem?.rank?.toString() || '3');
 
+  // Reset form when initialItem changes (e.g., switching between add/edit)
+  useEffect(() => {
+    setName(initialItem?.name || '');
+    setDescription(initialItem?.description || '');
+    setPrice(initialItem?.price?.toString() || '');
+    setLink(initialItem?.link || '');
+    setRank(initialItem?.rank?.toString() || '3');
+  }, [initialItem]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
