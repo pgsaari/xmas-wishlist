@@ -7,6 +7,7 @@ interface ItemModalProps {
   onClose: () => void;
   onSubmit: (item: CreateItemRequest) => void;
   initialItem?: CreateItemRequest;
+  isLoadingMetadata?: boolean;
 }
 
 export const ItemModal: React.FC<ItemModalProps> = ({
@@ -14,10 +15,11 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   onClose,
   onSubmit,
   initialItem,
+  isLoadingMetadata = false,
 }) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape' && isOpen && !isLoadingMetadata) {
         onClose();
       }
     };
@@ -32,7 +34,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isLoadingMetadata]);
 
   if (!isOpen) return null;
 
@@ -42,7 +44,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && !isLoadingMetadata) {
       onClose();
     }
   };
@@ -52,11 +54,21 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
       onClick={handleBackdropClick}
     >
-      <div className="card card-lg shadow-2xl max-w-2xl w-full animate-slide-up border-2 border-neutral-200 max-h-[90vh] overflow-y-auto">
+      <div className="card card-lg shadow-2xl max-w-2xl w-full animate-slide-up border-2 border-neutral-200 max-h-[90vh] overflow-y-auto relative">
+        {isLoadingMetadata && (
+          <div className="absolute inset-0 bg-white bg-opacity-90 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent mx-auto mb-4"></div>
+              <p className="text-lg font-semibold text-neutral-900">Fetching product metadata...</p>
+              <p className="text-sm text-neutral-600 mt-2">This may take a few seconds</p>
+            </div>
+          </div>
+        )}
         <ItemForm
           initialItem={initialItem}
           onSubmit={handleSubmit}
           onCancel={onClose}
+          isLoadingMetadata={isLoadingMetadata}
         />
       </div>
     </div>
