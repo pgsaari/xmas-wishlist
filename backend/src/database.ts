@@ -1,6 +1,8 @@
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import path from 'path';
+import { mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
 
 interface DatabaseSchema {
   users: Array<{
@@ -37,8 +39,18 @@ interface DatabaseSchema {
   }>;
 }
 
-// Use process.cwd() to get the current working directory (project root)
-const dbPath = path.join(process.cwd(), 'backend', 'db.json');
+// Determine the database path
+// __dirname will be either 'src' (when running with tsx) or 'dist' (when running compiled)
+// We want db.json in the backend directory, which is one level up from src/dist
+const dbPath = path.join(__dirname, '..', 'db.json');
+
+// Ensure the directory exists
+const ensureDbDir = async () => {
+  const dbDir = path.dirname(dbPath);
+  if (!existsSync(dbDir)) {
+    await mkdir(dbDir, { recursive: true });
+  }
+};
 
 const adapter = new JSONFile<DatabaseSchema>(dbPath);
 const db = new Low<DatabaseSchema>(adapter, {
@@ -50,6 +62,8 @@ const db = new Low<DatabaseSchema>(adapter, {
 
 // Initialize database - load data
 const initDb = async () => {
+  // Ensure the database directory exists
+  await ensureDbDir();
   await db.read();
   // Ensure default structure exists
   if (!db.data) {

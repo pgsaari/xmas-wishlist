@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { wishlistApi, PublicWishlist } from '../api/wishlists';
+import { wishlistApi, PublicWishlist as PublicWishlistType } from '../api/wishlists';
 import { ClaimModal } from '../components/ClaimModal';
 
 export const PublicWishlist: React.FC = () => {
   const { shareToken } = useParams<{ shareToken: string }>();
-  const [wishlist, setWishlist] = useState<PublicWishlist | null>(null);
+  const [wishlist, setWishlist] = useState<PublicWishlistType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [claimingItemId, setClaimingItemId] = useState<number | null>(null);
