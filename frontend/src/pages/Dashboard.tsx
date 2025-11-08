@@ -2,9 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { wishlistApi, Wishlist, CreateItemRequest, Item } from '../api/wishlists';
 import { ItemModal } from '../components/ItemModal';
-import { ItemCard } from '../components/ItemCard';
+import { SortableItemCard } from '../components/SortableItemCard';
 import { ShareModal } from '../components/ShareModal';
 import { InstallPWA } from '../components/InstallPWA';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
 
 export const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -16,10 +31,33 @@ export const Dashboard: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
+  const [items, setItems] = useState<Item[]>([]);
+  const [isReordering, setIsReordering] = useState(false);
+
+  // Configure sensors for drag-and-drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before starting drag
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     loadWishlist();
   }, []);
+
+  // Update items when wishlist changes (but not during reordering)
+  useEffect(() => {
+    if (wishlist && !isReordering) {
+      // Sort by rank descending
+      const sortedItems = [...wishlist.items].sort((a, b) => b.rank - a.rank);
+      setItems(sortedItems);
+    }
+  }, [wishlist, isReordering]);
 
   const loadWishlist = async () => {
     try {
@@ -30,6 +68,100 @@ export const Dashboard: React.FC = () => {
       setError(err.response?.data?.error || 'Failed to load wishlist');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = items.findIndex((item) => item.id === active.id);
+    const newIndex = items.findIndex((item) => item.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    // Save original order for rollback
+    const originalItems = [...items];
+
+    // Set reordering flag to prevent useEffect from overwriting our changes
+    setIsReordering(true);
+
+    // Update local state immediately for responsive UI
+    const newItems = arrayMove(items, oldIndex, newIndex);
+    setItems(newItems);
+
+    // Update ranks based on new positions (higher index = lower rank)
+    // Since items are sorted by rank descending, we assign ranks in reverse
+    try {
+      // Calculate new ranks: items at the beginning get higher ranks
+      const rankUpdates = newItems.map((item, index) => ({
+        itemId: item.id,
+        newRank: newItems.length - index,
+      }));
+
+      console.log('Updating ranks:', rankUpdates);
+
+      // Update items sequentially to avoid any potential race conditions
+      const updatedItems: Item[] = [];
+      for (const { itemId, newRank } of rankUpdates) {
+        try {
+          console.log(`Updating item ${itemId} to rank ${newRank}...`);
+          const updated = await wishlistApi.updateItem(itemId, { rank: newRank });
+          console.log(`✓ Updated item ${itemId} to rank ${newRank}:`, updated);
+          updatedItems.push(updated);
+        } catch (err: any) {
+          console.error(`✗ Failed to update item ${itemId}:`, err);
+          throw err;
+        }
+      }
+      console.log('All rank updates completed successfully');
+      console.log('Updated items from API:', updatedItems);
+
+      // Verify that ranks were actually updated
+      const rankCheck = updatedItems.map((item) => ({
+        id: item.id,
+        rank: item.rank,
+        expectedRank: rankUpdates.find((r) => r.itemId === item.id)?.newRank,
+      }));
+      console.log('Rank verification:', rankCheck);
+
+      // Update the wishlist state with items in the new order (with updated ranks)
+      if (wishlist) {
+        // Map newItems to include the updated data from API
+        const reorderedItems = newItems.map((item) => {
+          const updated = updatedItems.find((u) => u.id === item.id);
+          // Use the updated item if available, otherwise use the item with updated rank
+          return updated || { ...item, rank: rankUpdates.find((r) => r.itemId === item.id)?.newRank || item.rank };
+        });
+
+        const updatedWishlist = {
+          ...wishlist,
+          items: reorderedItems,
+        };
+        
+        console.log('Setting updated wishlist with items:', reorderedItems.map((i) => ({ id: i.id, rank: i.rank })));
+        
+        // Update both states to ensure consistency
+        setWishlist(updatedWishlist);
+        setItems(reorderedItems);
+        
+        // Clear the reordering flag - the states are now consistent
+        // The useEffect won't overwrite because items already match the wishlist order
+        setIsReordering(false);
+      } else {
+        setIsReordering(false);
+      }
+    } catch (err: any) {
+      console.error('Error reordering items:', err);
+      setError(err.response?.data?.error || 'Failed to reorder items');
+      // Revert to original order on error
+      setItems(originalItems);
+      setIsReordering(false);
     }
   };
 
@@ -198,20 +330,29 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Items Grid */}
-        {wishlist && wishlist.items.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {wishlist.items
-              .sort((a, b) => b.rank - a.rank)
-              .map((item) => (
-                <ItemCard
-                  key={item.id}
-                  item={item}
-                  isEditable={true}
-                  onEdit={() => handleEditClick(item)}
-                  onDelete={() => handleDeleteItem(item.id)}
-                />
-              ))}
-          </div>
+        {wishlist && items.length > 0 ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={items.map((item) => item.id)}
+              strategy={rectSortingStrategy}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {items.map((item) => (
+                  <SortableItemCard
+                    key={item.id}
+                    item={item}
+                    isEditable={true}
+                    onEdit={() => handleEditClick(item)}
+                    onDelete={() => handleDeleteItem(item.id)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         ) : (
           <div className="text-center py-16 card card-lg shadow-sm border-2 border-dashed border-neutral-300">
             <span className="text-6xl block mb-4">🎁</span>
