@@ -18,47 +18,65 @@ export const ClaimModal: React.FC<ClaimModalProps> = ({ itemName, onClaim, onClo
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-        <h2 className="text-2xl font-bold mb-4">Claim Item</h2>
-        <p className="text-gray-600 mb-4">
-          You're about to claim <strong>{itemName}</strong>. This will prevent others from buying the same item. The
-          wishlist owner will not see this claim to keep it a surprise!
-        </p>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="card card-lg shadow-2xl max-w-md w-full animate-slide-up border-2 border-neutral-200">
+        <div className="flex items-start gap-3 mb-4">
+          <span className="text-3xl">🎁</span>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Your Name *</label>
+            <h2 className="text-2xl font-bold text-neutral-900">Claim Item</h2>
+            <p className="text-neutral-600 text-sm">Secure this gift for {itemName}</p>
+          </div>
+        </div>
+
+        <div className="alert alert-info mb-6">
+          <span className="text-lg">ℹ️</span>
+          <div>
+            <p className="font-semibold text-sm mb-1">Reserved and Secret</p>
+            <p className="text-xs">
+              The wishlist owner won't see your claim—keeping the surprise alive!
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-neutral-900 mb-2">Your Name *</label>
             <input
               type="text"
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="John Doe"
+              className="input"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Your Email *</label>
+            <label className="block text-sm font-semibold text-neutral-900 mb-2">Your Email *</label>
             <input
               type="email"
               value={buyerEmail}
               onChange={(e) => setBuyerEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="you@example.com"
+              className="input"
             />
+            <p className="text-xs text-neutral-500 mt-2">Used to confirm your claim</p>
           </div>
-          <div className="flex justify-end space-x-3">
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="btn btn-outline"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              className="btn btn-secondary"
             >
-              Claim Item
+              ✓ Claim Item
             </button>
           </div>
         </form>

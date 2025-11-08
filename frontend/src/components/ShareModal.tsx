@@ -15,32 +15,57 @@ export const ShareModal: React.FC<ShareModalProps> = ({ shareUrl, onClose }) => 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-        <h2 className="text-2xl font-bold mb-4">Share Your Wishlist</h2>
-        <p className="text-gray-600 mb-4">
-          Share this link with your family and friends. They can view your wishlist and claim items they want to buy.
+    <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="card card-lg shadow-2xl max-w-md w-full animate-slide-up border-2 border-neutral-200">
+        <div className="flex items-start gap-3 mb-4">
+          <span className="text-3xl">🔗</span>
+          <div>
+            <h2 className="text-2xl font-bold text-neutral-900">Share Your Wishlist</h2>
+            <p className="text-neutral-600 text-sm">Spread the joy</p>
+          </div>
+        </div>
+
+        <p className="text-neutral-700 mb-6 leading-relaxed">
+          Share this link with family and friends. They can view your wishlist and claim the gifts they want to buy for you.
         </p>
-        <div className="flex items-center space-x-2 mb-4">
-          <input
-            type="text"
-            value={shareUrl}
-            readOnly
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-          />
+
+        <div className="bg-primary-50 rounded-lg p-4 mb-6 border-2 border-primary-200">
+          <p className="text-xs font-semibold text-neutral-700 mb-2">Wishlist Link</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={shareUrl}
+              readOnly
+              className="flex-1 px-3 py-2.5 bg-white border border-neutral-300 rounded-lg text-sm font-mono text-neutral-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <button
+              onClick={handleCopy}
+              className={`btn btn-sm font-semibold transition-all ${
+                copied
+                  ? 'btn-secondary'
+                  : 'btn-primary'
+              }`}
+            >
+              {copied ? '✓ Copied!' : '📋 Copy'}
+            </button>
+          </div>
+        </div>
+
+        {copied && (
+          <div className="alert alert-success mb-6 animate-slide-up">
+            <span>✓</span>
+            <p className="font-semibold">Link copied to clipboard!</p>
+          </div>
+        )}
+
+        <div className="flex gap-3">
           <button
-            onClick={handleCopy}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            onClick={onClose}
+            className="flex-1 btn btn-outline"
           >
-            {copied ? 'Copied!' : 'Copy'}
+            Close
           </button>
         </div>
-        <button
-          onClick={onClose}
-          className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
-        >
-          Close
-        </button>
       </div>
     </div>
   );
