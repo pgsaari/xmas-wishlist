@@ -201,36 +201,48 @@ jobs:
           cd frontend
           npm run build
 
-      - name: Wait for Static Web App to be ready
+      - name: Wait for Static Web App to be accessible
         run: |
           STATIC_WEB_APP_NAME="${{ needs.deploy-infrastructure.outputs.staticWebAppName }}"
           RESOURCE_GROUP="${{ env.RESOURCE_GROUP_NAME }}"
           
-          echo "Waiting for Static Web App to be fully provisioned..."
-          MAX_WAIT=180
-          WAIT_TIME=0
+          echo "Waiting for Static Web App to be accessible..."
+          echo "Static Web App Name: ${STATIC_WEB_APP_NAME}"
+          echo "Resource Group: ${RESOURCE_GROUP}"
           
-          while [ $WAIT_TIME -lt $MAX_WAIT ]; do
-            PROVISIONING_STATE=$(az staticwebapp show \
+          # Wait a fixed amount of time for the resource to be created
+          # Static Web Apps can take a minute or two to be fully provisioned
+          echo "Waiting 30 seconds for Static Web App to initialize..."
+          sleep 30
+          
+          # Verify the resource exists and is accessible
+          MAX_ATTEMPTS=12
+          ATTEMPT=0
+          
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Checking if Static Web App is accessible..."
+            
+            # Check if we can query the resource
+            if az staticwebapp show \
               --name "${STATIC_WEB_APP_NAME}" \
               --resource-group "${RESOURCE_GROUP}" \
-              --query "properties.provisioningState" -o tsv 2>/dev/null || echo "NotFound")
-            
-            if [ "$PROVISIONING_STATE" = "Succeeded" ]; then
-              echo "Static Web App is ready!"
+              --query "name" -o tsv > /dev/null 2>&1; then
+              echo "Static Web App resource is accessible!"
               break
-            elif [ "$PROVISIONING_STATE" = "NotFound" ]; then
-              echo "Static Web App not found yet, waiting..."
             else
-              echo "Provisioning state: $PROVISIONING_STATE, waiting..."
+              echo "Static Web App not yet accessible, waiting 10 seconds..."
+              sleep 10
             fi
-            
-            sleep 10
-            WAIT_TIME=$((WAIT_TIME + 10))
           done
           
-          if [ "$PROVISIONING_STATE" != "Succeeded" ]; then
-            echo "Warning: Static Web App may not be fully ready (state: $PROVISIONING_STATE)"
+          # Final check
+          if ! az staticwebapp show \
+            --name "${STATIC_WEB_APP_NAME}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --query "name" -o tsv > /dev/null 2>&1; then
+            echo "Warning: Could not verify Static Web App accessibility, but proceeding anyway..."
+            echo "The token retrieval step will retry if needed."
           fi
 
       - name: Get Static Web App deployment token
@@ -241,19 +253,32 @@ jobs:
           STATIC_WEB_APP_NAME="${{ needs.deploy-infrastructure.outputs.staticWebAppName }}"
           
           echo "Retrieving deployment token for: ${STATIC_WEB_APP_NAME}"
+          echo "Subscription: ${SUBSCRIPTION_ID}"
+          echo "Resource Group: ${RESOURCE_GROUP}"
+          
+          # First, verify the Static Web App exists and show its details
+          echo "Checking Static Web App resource..."
+          az staticwebapp show \
+            --name "${STATIC_WEB_APP_NAME}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --output table || echo "Warning: Could not show Static Web App details"
           
           # Retry logic for token retrieval
-          MAX_RETRIES=15
+          # Note: Static Web Apps may take a few minutes after creation before secrets are available
+          MAX_RETRIES=20
           RETRY_COUNT=0
           TOKEN=""
           
           while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ -z "$TOKEN" ]; do
-            echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo ""
+            echo "=== Attempt $RETRY_COUNT of $MAX_RETRIES ==="
             
             # Use Azure REST API to list secrets
             TEMP_FILE=$(mktemp)
             ERROR_FILE=$(mktemp)
             
+            echo "Calling listSecrets API..."
             if az rest --method POST \
               --uri "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Web/staticSites/${STATIC_WEB_APP_NAME}/listSecrets?api-version=2023-01-01" \
               --headers "Content-Type=application/json" \
@@ -261,57 +286,82 @@ jobs:
               
               TOKEN=$(cat "${TEMP_FILE}" | tr -d '\n\r' | xargs)
               
-              # Check for errors
+              # Check for errors in stderr
               if [ -s "${ERROR_FILE}" ]; then
                 ERROR_MSG=$(cat "${ERROR_FILE}")
-                echo "Warning: Error output: $ERROR_MSG"
+                echo "Stderr output: $ERROR_MSG"
+              fi
+              
+              # Check stdout for errors
+              if [ -s "${TEMP_FILE}" ]; then
+                TEMP_CONTENT=$(cat "${TEMP_FILE}")
+                echo "Stdout content (first 100 chars): ${TEMP_CONTENT:0:100}"
               fi
               
               rm -f "${TEMP_FILE}" "${ERROR_FILE}"
               
               # Verify token is valid
               if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ] || [ "$TOKEN" = "None" ]; then
-                echo "Token is empty or null, retrying..."
+                echo "Token is empty or null (value: '$TOKEN')"
                 TOKEN=""
-                sleep 20
-              elif echo "$TOKEN" | grep -qi "error\|failed\|unauthorized\|forbidden\|not found"; then
-                echo "Error in token response: $TOKEN"
+                echo "Waiting 30 seconds before retry..."
+                sleep 30
+              elif echo "$TOKEN" | grep -qiE "error|failed|unauthorized|forbidden|not found|BadRequest|NotFound"; then
+                echo "Error detected in token response: ${TOKEN:0:200}"
                 TOKEN=""
-                sleep 20
+                echo "Waiting 30 seconds before retry..."
+                sleep 30
               elif [ ${#TOKEN} -lt 20 ] || [ ${#TOKEN} -gt 500 ]; then
                 echo "Token length looks invalid: ${#TOKEN} characters"
+                echo "Token preview: ${TOKEN:0:50}..."
                 TOKEN=""
-                sleep 20
+                echo "Waiting 30 seconds before retry..."
+                sleep 30
               else
-                echo "Token retrieved successfully (length: ${#TOKEN})"
+                echo "✓ Token retrieved successfully (length: ${#TOKEN} characters)"
                 break
               fi
             else
-              echo "REST API call failed"
+              EXIT_CODE=$?
+              echo "REST API call failed with exit code: $EXIT_CODE"
               if [ -s "${ERROR_FILE}" ]; then
-                echo "Error details: $(cat "${ERROR_FILE}")"
+                echo "Error details:"
+                cat "${ERROR_FILE}"
               fi
               if [ -s "${TEMP_FILE}" ]; then
-                echo "Response: $(cat "${TEMP_FILE}")"
+                echo "Response content:"
+                cat "${TEMP_FILE}"
               fi
               TOKEN=""
               rm -f "${TEMP_FILE}" "${ERROR_FILE}"
-              sleep 20
+              echo "Waiting 30 seconds before retry..."
+              sleep 30
             fi
-            
-            RETRY_COUNT=$((RETRY_COUNT + 1))
           done
           
           if [ -z "$TOKEN" ]; then
+            echo ""
             echo "ERROR: Failed to retrieve deployment token after $MAX_RETRIES attempts"
-            echo "Checking Static Web App details..."
-            az staticwebapp show --name "${STATIC_WEB_APP_NAME}" --resource-group "${RESOURCE_GROUP}" --output table || true
-            echo "Trying to get token using alternative method..."
-            # Try alternative: get the full response and parse it
-            FULL_RESPONSE=$(az rest --method POST \
-              --uri "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Web/staticSites/${STATIC_WEB_APP_NAME}/listSecrets?api-version=2023-01-01" 2>&1)
-            echo "Full API response:"
-            echo "$FULL_RESPONSE" | head -20
+            echo ""
+            echo "Diagnostic information:"
+            echo "1. Checking if Static Web App exists..."
+            az staticwebapp show \
+              --name "${STATIC_WEB_APP_NAME}" \
+              --resource-group "${RESOURCE_GROUP}" \
+              --output json > /tmp/swa-info.json 2>&1 || true
+            if [ -f /tmp/swa-info.json ]; then
+              echo "Static Web App details:"
+              cat /tmp/swa-info.json | head -50
+            fi
+            echo ""
+            echo "2. Trying full API response..."
+            az rest --method POST \
+              --uri "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Web/staticSites/${STATIC_WEB_APP_NAME}/listSecrets?api-version=2023-01-01" \
+              --headers "Content-Type=application/json" \
+              --output json 2>&1 | head -100 || true
+            echo ""
+            echo "Note: Static Web Apps may take 5-10 minutes after creation before secrets are available."
+            echo "If this is a newly created resource, wait a few minutes and retry the deployment."
             exit 1
           fi
           
@@ -319,7 +369,7 @@ jobs:
           TOKEN_CLEAN=$(echo "$TOKEN" | tr -d '\n\r' | xargs)
           echo "::add-mask::$TOKEN_CLEAN"
           echo "token=$TOKEN_CLEAN" >> $GITHUB_OUTPUT
-          echo "Deployment token retrieved and set as output"
+          echo "Deployment token successfully set as output"
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
