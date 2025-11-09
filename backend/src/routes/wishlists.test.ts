@@ -181,7 +181,7 @@ describe('Wishlists Routes', () => {
 
       vi.mocked(dbHelpers.getWishlistByShareToken).mockReturnValue(mockWishlist);
       vi.mocked(dbHelpers.getItemsByWishlistId).mockReturnValue(mockItems);
-      vi.mocked(dbHelpers.getClaimByItemId).mockReturnValue(null);
+      vi.mocked(dbHelpers.getClaimByItemId).mockReturnValue(undefined);
 
       const response = await request(app)
         .get('/api/wishlists/shared/test-token');
@@ -263,6 +263,10 @@ describe('Wishlists Routes', () => {
 
       vi.mocked(dbHelpers.getWishlistByUserId).mockReturnValue(mockWishlist);
       vi.mocked(MetadataService.fetchMetadata).mockResolvedValue({
+        name: null,
+        price: null,
+        image_url: null,
+        retailer: 'Unknown',
         success: false,
         error: 'No metadata',
       });
@@ -361,7 +365,7 @@ describe('Wishlists Routes', () => {
 
       vi.mocked(dbHelpers.getWishlistByShareToken).mockReturnValue(mockWishlist);
       vi.mocked(dbHelpers.getItemById).mockReturnValue(mockItem);
-      vi.mocked(dbHelpers.getClaimByItemId).mockReturnValue(null);
+      vi.mocked(dbHelpers.getClaimByItemId).mockReturnValue(undefined);
       vi.mocked(dbHelpers.createClaim).mockResolvedValue({
         id: 1,
         item_id: 1,

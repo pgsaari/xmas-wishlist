@@ -26,7 +26,7 @@ describe('authenticate middleware', () => {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
     };
-    mockNext = vi.fn();
+    mockNext = vi.fn() as unknown as NextFunction;
   });
 
   it('should call next() when valid token is provided', () => {

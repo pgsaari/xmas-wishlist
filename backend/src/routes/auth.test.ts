@@ -37,7 +37,7 @@ describe('Auth Routes', () => {
 
   describe('POST /api/auth/register', () => {
     it('should register a new user successfully', async () => {
-      vi.mocked(dbHelpers.getUserByEmail).mockReturnValue(null);
+      vi.mocked(dbHelpers.getUserByEmail).mockReturnValue(undefined);
       vi.mocked(hashPassword).mockResolvedValue('hashed-password');
       vi.mocked(dbHelpers.createUser).mockResolvedValue({
         id: 1,
@@ -201,7 +201,7 @@ describe('Auth Routes', () => {
     });
 
     it('should return 401 if user does not exist', async () => {
-      vi.mocked(dbHelpers.getUserByEmail).mockReturnValue(null);
+      vi.mocked(dbHelpers.getUserByEmail).mockReturnValue(undefined);
 
       const response = await request(app)
         .post('/api/auth/login')
