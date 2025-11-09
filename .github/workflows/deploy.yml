@@ -56,10 +56,12 @@ jobs:
           subscriptionId: ${{ env.AZURE_SUBSCRIPTION_ID }}
           resourceGroupName: ${{ env.RESOURCE_GROUP_NAME }}
           template: infrastructure/main.bicep
-          parameters: |
-            appName=xmas-wishlist
-            location=${{ env.LOCATION }}
-            jwtSecret=${{ env.JWT_SECRET }}
+          parameters: >
+            {
+              "appName": { "value": "xmas-wishlist" },
+              "location": { "value": "${{ env.LOCATION }}" },
+              "jwtSecret": { "value": "${{ env.JWT_SECRET }}" }
+            }
           failOnStdErr: false
 
       - name: Output deployment results

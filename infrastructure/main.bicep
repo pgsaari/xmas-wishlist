@@ -65,7 +65,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
         }
         {
           name: 'FRONTEND_URL'
-          value: 'https://${staticWebApp.properties.defaultHostName}'
+          value: 'https://${staticWebApp.properties.defaultHostname}'
         }
         {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
@@ -89,13 +89,14 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
 }
 
 // Output the frontend URL
-output frontendUrl string = 'https://${staticWebApp.properties.defaultHostName}'
+output frontendUrl string = 'https://${staticWebApp.properties.defaultHostname}'
 
 // Output the backend URL
-output backendUrl string = 'https://${appService.properties.defaultHostName}'
+output backendUrl string = 'https://${appService.properties.defaultHostname}'
 
 // Output static web app deployment token (for GitHub Actions)
 // Note: This output contains a secret but is required for CI/CD deployment
+@secure()
 output staticWebAppDeploymentToken string = staticWebApp.listSecrets().properties.apiKey
 
 // Output the app service name (for deployment)
