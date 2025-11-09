@@ -12,17 +12,63 @@ export const InstallPWA: React.FC = () => {
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    /**
+     * PWA Installation Detection Strategy:
+     * 
+     * 1. Standalone Mode Check (Currently Running as PWA):
+     *    - If display-mode is 'standalone', the app is running as an installed PWA
+     *    - iOS Safari uses navigator.standalone property
+     *    - In this case, hide the install button immediately
+     * 
+     * 2. beforeinstallprompt Event (Primary Detection):
+     *    - Browsers fire this event ONLY when:
+     *      a) The PWA meets installation criteria (manifest, service worker, HTTPS)
+     *      b) The PWA is NOT already installed
+     *    - If the PWA is already installed, browsers WON'T fire this event
+     *    - This is the primary mechanism browsers use to prevent showing install
+     *      prompts for already-installed PWAs, even when viewing in a browser tab
+     * 
+     * 3. getInstalledRelatedApps() API (Optional, Limited Support):
+     *    - Can explicitly check if the app is installed
+     *    - Requires manifest configuration with related_applications
+     *    - Limited browser support (Chrome 84+ on Android, Chrome 140+ on desktop)
+     *    - Falls back to beforeinstallprompt behavior if not available
+     * 
+     * 4. appinstalled Event:
+     *    - Fires when user completes installation
+     *    - Used to update state after installation
+     */
+
+    // Check if currently running as PWA (standalone mode)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                         (window.navigator as any).standalone === true;
+    
+    if (isStandalone) {
       setIsInstalled(true);
+      setShowButton(false);
       return;
     }
 
-    if ((window.navigator as any).standalone === true) {
-      setIsInstalled(true);
-      return;
+    // Optional: Check if PWA is already installed using getInstalledRelatedApps API
+    // This provides explicit detection even when viewing in a browser tab
+    if ('getInstalledRelatedApps' in navigator) {
+      (navigator as any).getInstalledRelatedApps().then((apps: any[]) => {
+        if (apps && apps.length > 0) {
+          // PWA is already installed - hide install button
+          setIsInstalled(true);
+          setShowButton(false);
+        }
+      }).catch(() => {
+        // API not fully supported or error - fall back to beforeinstallprompt
+      });
     }
 
+    // Listen for beforeinstallprompt event
+    // This event ONLY fires if:
+    // - PWA meets installation criteria (manifest, service worker, HTTPS)
+    // - PWA is NOT already installed
+    // Browsers automatically prevent this event if the PWA is already installed,
+    // even when viewing the site in a browser tab (not standalone mode)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -31,31 +77,17 @@ export const InstallPWA: React.FC = () => {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Listen for successful installation
     window.addEventListener('appinstalled', () => {
       setIsInstalled(true);
       setShowButton(false);
       setDeferredPrompt(null);
     });
 
-    // Show button after checking service worker
-    const timer = setTimeout(async () => {
-      if ('serviceWorker' in navigator) {
-        try {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration && !isInstalled) {
-            setShowButton(true);
-          }
-        } catch (error) {
-          // Ignore errors
-        }
-      }
-    }, 2000);
-
     return () => {
-      clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, [isInstalled]);
+  }, []);
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
@@ -131,7 +163,16 @@ export const InstallPWA: React.FC = () => {
     }
   };
 
-  if (isInstalled || !showButton) {
+  // Final check before rendering button:
+  // 1. Don't show if already marked as installed
+  // 2. Don't show if currently running in standalone mode (PWA mode)
+  // 3. Only show if beforeinstallprompt event fired (showButton is true)
+  //    This ensures the button only appears when install capability is available
+  //    and the PWA is not already installed
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                       (window.navigator as any).standalone === true;
+  
+  if (isInstalled || isStandalone || !showButton) {
     return null;
   }
 
