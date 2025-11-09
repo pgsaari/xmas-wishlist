@@ -2,24 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
-import { AuthContext } from '../context/AuthContext';
 
 // Mock useAuth hook
+const mockUseAuth = vi.fn();
+
 vi.mock('../context/AuthContext', () => ({
-  useAuth: vi.fn(),
+  useAuth: () => mockUseAuth(),
   AuthContext: {
     Provider: ({ children, value }: { children: React.ReactNode; value: any }) => children,
   },
 }));
 
 describe('ProtectedRoute', () => {
-  const mockUseAuth = vi.fn();
-  
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset the mock implementation
-    const authModule = require('../context/AuthContext');
-    authModule.useAuth = mockUseAuth;
   });
 
   const renderWithRouter = (isAuthenticated: boolean, loading: boolean = false) => {

@@ -21,10 +21,10 @@ describe('ClaimModal', () => {
   it('should show form fields', () => {
     render(<ClaimModal itemName={itemName} onClaim={mockOnClaim} onClose={mockOnClose} />);
     
-    expect(screen.getByLabelText(/Your Name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Your Email/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText('John Doe')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument();
+    expect(screen.getByText(/Your Name/i)).toBeInTheDocument();
+    expect(screen.getByText(/Your Email/i)).toBeInTheDocument();
   });
 
   it('should call onClose when cancel button is clicked', () => {

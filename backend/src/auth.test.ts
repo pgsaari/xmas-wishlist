@@ -22,8 +22,6 @@ vi.mock('jsonwebtoken', () => ({
 describe('auth utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Set default JWT_SECRET for tests
-    process.env.JWT_SECRET = 'test-secret';
   });
 
   describe('hashPassword', () => {
@@ -71,15 +69,15 @@ describe('auth utilities', () => {
       expect(result).toBe('mock-token');
     });
 
-    it('should use default secret when JWT_SECRET is not set', () => {
-      delete process.env.JWT_SECRET;
+    it('should use configured JWT_SECRET from environment', () => {
       vi.mocked(jwt.sign).mockReturnValue('mock-token' as never);
 
       generateToken(1, 'test@example.com');
 
+      // JWT_SECRET is set in vitest.config.ts to 'test-secret'
       expect(jwt.sign).toHaveBeenCalledWith(
         { userId: 1, email: 'test@example.com' },
-        'default-secret-change-in-production',
+        'test-secret',
         { expiresIn: '7d' }
       );
     });

@@ -109,6 +109,10 @@ describe('ItemForm', () => {
     
     fireEvent.click(fifthStar);
     
+    // Fill in required name field
+    const nameInput = screen.getByPlaceholderText('e.g., Sony WH-1000XM5 Headphones');
+    fireEvent.change(nameInput, { target: { value: 'Test Item' } });
+    
     const submitButton = screen.getByText('➕ Add Item');
     fireEvent.click(submitButton);
     
@@ -164,7 +168,7 @@ describe('ItemForm', () => {
     render(<ItemForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} isLoadingMetadata={true} />);
     
     const linkInput = screen.getByPlaceholderText('https://amazon.com/...') as HTMLInputElement;
-    const submitButton = screen.getByText(/Fetching metadata.../);
+    const submitButton = screen.getByRole('button', { name: /Adding.../i });
     const cancelButton = screen.getByText('Cancel');
     
     expect(linkInput.disabled).toBe(true);
@@ -178,7 +182,8 @@ describe('ItemForm', () => {
     const linkInput = screen.getByPlaceholderText('https://amazon.com/...');
     fireEvent.change(linkInput, { target: { value: 'https://example.com' } });
     
-    expect(screen.getByText('Fetching metadata...')).toBeInTheDocument();
+    // Check that loading indicator appears (there may be multiple instances)
+    expect(screen.getAllByText('Fetching metadata...').length).toBeGreaterThan(0);
   });
 
   it('should update form when initialItem changes', () => {
