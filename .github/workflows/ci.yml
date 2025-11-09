@@ -42,7 +42,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
 
     steps:
@@ -75,6 +75,12 @@ jobs:
 
     - name: Run frontend tests with coverage
       run: cd frontend && npm run test:coverage
+      continue-on-error: false
+
+    - name: Run backend tests with coverage
+      env:
+        JWT_SECRET: test-secret
+      run: cd backend && npm run test:coverage
       continue-on-error: false
       
     - name: Verify coverage files were generated
@@ -291,6 +297,40 @@ jobs:
             // Don't fail the workflow if commenting fails
             process.exit(0);
           }
+
+    - name: Generate coverage badge
+      if: always()
+      continue-on-error: true
+      run: |
+        cd frontend
+        if [ -f "coverage/coverage-summary.json" ]; then
+          COVERAGE=$(node -p "Math.round(require('./coverage/coverage-summary.json').total.lines.pct)" 2>/dev/null || echo "0")
+          if [ "$COVERAGE" -ge 80 ]; then
+            COLOR="green"
+          elif [ "$COVERAGE" -ge 60 ]; then
+            COLOR="yellow"
+          else
+            COLOR="red"
+          fi
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "COLOR=$COLOR" >> $GITHUB_ENV
+          echo "Coverage: $COVERAGE%"
+        else
+          echo "COVERAGE=0" >> $GITHUB_ENV
+          echo "COLOR=red" >> $GITHUB_ENV
+        fi
+
+    - name: Update coverage badge in README
+      if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+      continue-on-error: true
+      run: |
+        COVERAGE=${COVERAGE:-0}
+        COLOR=${COLOR:-red}
+        # Update the badge URL in README
+        sed -i "s|![Coverage](https://img.shields.io/badge/coverage-[0-9]*%25-[a-z]*?style=flat-square)|![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}?style=flat-square)|g" README.md
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git diff --exit-code README.md || (git add README.md && git commit -m "Update coverage badge: ${COVERAGE}%" && git push)
 
     - name: Upload coverage reports
       if: always()
