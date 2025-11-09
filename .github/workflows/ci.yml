@@ -4,7 +4,8 @@ on:
   push:
     branches: [ main, 'feature/**', 'fix/**' ]
   pull_request:
-    branches: [ main ]
+    # Run on all pull requests (created, updated, synchronize)
+    types: [opened, synchronize, reopened]
 
 jobs:
   build:
@@ -37,6 +38,268 @@ jobs:
     - name: Build frontend
       run: cd frontend && npm run build
       continue-on-error: false
+
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for better coverage comparison
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install root dependencies
+      run: npm ci
+
+    - name: Install all dependencies
+      run: npm run install:all
+
+    - name: Verify coverage provider is installed
+      run: |
+        cd frontend
+        if npm list @vitest/coverage-v8 > /dev/null 2>&1; then
+          echo "✅ @vitest/coverage-v8 is installed"
+        else
+          echo "❌ @vitest/coverage-v8 is NOT installed - installing now..."
+          npm install --save-dev @vitest/coverage-v8
+        fi
+
+    - name: Run frontend tests with coverage
+      run: cd frontend && npm run test:coverage
+      continue-on-error: false
+      
+    - name: Verify coverage files were generated
+      if: always()
+      run: |
+        echo "Checking for coverage files..."
+        if [ -d "frontend/coverage" ]; then
+          echo "✅ Coverage directory exists"
+          echo "Files in coverage directory:"
+          ls -la frontend/coverage/ || true
+        else
+          echo "⚠️ Coverage directory was not created"
+        fi
+        if [ -f "frontend/coverage/coverage-summary.json" ]; then
+          echo "✅ coverage-summary.json exists"
+          echo "File size: $(wc -c < frontend/coverage/coverage-summary.json) bytes"
+        else
+          echo "❌ coverage-summary.json not found"
+        fi
+
+    - name: Parse coverage and comment on PR
+      if: github.event_name == 'pull_request'
+      continue-on-error: true
+      uses: actions/github-script@v7
+      env:
+        COVERAGE_FILE: frontend/coverage/coverage-summary.json
+        COVERAGE_JSON: frontend/coverage/coverage-final.json
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Helper function to calculate coverage from v8 format
+          function calculateCoverageTotals(coverageData) {
+            let totalLines = { covered: 0, total: 0 };
+            let totalStatements = { covered: 0, total: 0 };
+            let totalFunctions = { covered: 0, total: 0 };
+            let totalBranches = { covered: 0, total: 0 };
+            
+            for (const file in coverageData) {
+              const fileCoverage = coverageData[file];
+              const s = fileCoverage.s || {}; // statements
+              const f = fileCoverage.f || {}; // functions
+              const b = fileCoverage.b || {}; // branches
+              const statementMap = fileCoverage.statementMap || {};
+              const fnMap = fileCoverage.fnMap || {};
+              const branchMap = fileCoverage.branchMap || {};
+              
+              // Count statements
+              totalStatements.total += Object.keys(statementMap).length;
+              totalStatements.covered += Object.values(s).filter(count => count > 0).length;
+              
+              // Count functions
+              totalFunctions.total += Object.keys(fnMap).length;
+              totalFunctions.covered += Object.values(f).filter(count => count > 0).length;
+              
+              // Count branches
+              for (const branchId in branchMap) {
+                const branch = branchMap[branchId];
+                totalBranches.total += branch.locations.length;
+                const branchCounts = b[branchId] || [];
+                totalBranches.covered += branchCounts.filter(count => count > 0).length;
+              }
+            }
+            
+            // Count lines (approximate from statements)
+            totalLines.total = totalStatements.total;
+            totalLines.covered = totalStatements.covered;
+            
+            return {
+              lines: {
+                total: totalLines.total,
+                covered: totalLines.covered,
+                pct: totalLines.total > 0 ? (totalLines.covered / totalLines.total) * 100 : 0
+              },
+              statements: {
+                total: totalStatements.total,
+                covered: totalStatements.covered,
+                pct: totalStatements.total > 0 ? (totalStatements.covered / totalStatements.total) * 100 : 0
+              },
+              functions: {
+                total: totalFunctions.total,
+                covered: totalFunctions.covered,
+                pct: totalFunctions.total > 0 ? (totalFunctions.covered / totalFunctions.total) * 100 : 0
+              },
+              branches: {
+                total: totalBranches.total,
+                covered: totalBranches.covered,
+                pct: totalBranches.total > 0 ? (totalBranches.covered / totalBranches.total) * 100 : 0
+              }
+            };
+          }
+          
+          console.log('🔍 Starting coverage comment step...');
+          console.log('Current working directory:', process.cwd());
+          
+          const coverageDir = path.join(process.cwd(), 'frontend', 'coverage');
+          console.log('Coverage directory:', coverageDir);
+          
+          // Check if coverage directory exists
+          if (!fs.existsSync(coverageDir)) {
+            console.log('⚠️ Coverage directory does not exist:', coverageDir);
+            console.log('Coverage comment will be skipped.');
+            process.exit(0);
+          }
+          
+          console.log('✅ Coverage directory exists');
+          const files = fs.readdirSync(coverageDir);
+          console.log('Files in coverage directory:', files);
+          
+          // Try to find coverage-summary.json first (json-summary reporter)
+          let coveragePath = path.join(coverageDir, 'coverage-summary.json');
+          let coverage;
+          let total;
+          
+          if (fs.existsSync(coveragePath)) {
+            console.log('✅ Found coverage-summary.json');
+            try {
+              coverage = JSON.parse(fs.readFileSync(coveragePath, 'utf8'));
+              total = coverage.total;
+            } catch (error) {
+              console.error('❌ Error parsing coverage-summary.json:', error.message);
+            }
+          } else {
+            // Fall back to coverage-final.json (v8 coverage format)
+            coveragePath = path.join(coverageDir, 'coverage-final.json');
+            if (fs.existsSync(coveragePath)) {
+              console.log('✅ Found coverage-final.json, calculating summary...');
+              try {
+                coverage = JSON.parse(fs.readFileSync(coveragePath, 'utf8'));
+                // Calculate totals from v8 coverage format
+                total = calculateCoverageTotals(coverage);
+              } catch (error) {
+                console.error('❌ Error parsing coverage-final.json:', error.message);
+              }
+            } else {
+              console.log('⚠️ No coverage files found (checked coverage-summary.json and coverage-final.json)');
+              console.log('Coverage comment will be skipped.');
+              process.exit(0);
+            }
+          }
+          
+          if (!total || (total.lines === undefined && total.statements === undefined)) {
+            console.error('❌ Could not extract coverage totals from coverage file');
+            console.log('Coverage file structure:', JSON.stringify(coverage, null, 2).substring(0, 500));
+            console.log('Coverage comment will be skipped.');
+            process.exit(0);
+          }
+          
+          const lines = total.lines?.pct ?? total.lines ?? 0;
+          const statements = total.statements?.pct ?? total.statements ?? 0;
+          const functions = total.functions?.pct ?? total.functions ?? 0;
+          const branches = total.branches?.pct ?? total.branches ?? 0;
+          
+          // Determine coverage status emoji
+          const getStatusEmoji = (pct) => {
+            if (pct >= 80) return '🟢';
+            if (pct >= 60) return '🟡';
+            return '🔴';
+          };
+          
+          // Create coverage comment with better formatting
+          const comment = `## 📊 Test Coverage Report
+          
+          | Metric | Coverage | Status |
+          |--------|----------|--------|
+          | **Lines** | ${lines.toFixed(2)}% | ${getStatusEmoji(lines)} |
+          | **Statements** | ${statements.toFixed(2)}% | ${getStatusEmoji(statements)} |
+          | **Functions** | ${functions.toFixed(2)}% | ${getStatusEmoji(functions)} |
+          | **Branches** | ${branches.toFixed(2)}% | ${getStatusEmoji(branches)} |
+          
+          **Total Coverage**: ${lines.toFixed(2)}%
+          
+          > Coverage report generated by [Vitest](https://vitest.dev/) with [@vitest/coverage-v8](https://github.com/vitest-dev/vitest/tree/main/packages/coverage-v8)
+          
+          ---
+          *This comment will be updated automatically when new commits are pushed to this PR.*`;
+          
+          try {
+            // Find existing coverage comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              (comment.body.includes('📊 Test Coverage Report') || comment.body.includes('Test Coverage Report'))
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment,
+              });
+              console.log('✅ Coverage comment updated successfully');
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment,
+              });
+              console.log('✅ Coverage comment posted successfully');
+            }
+          } catch (error) {
+            console.error('❌ Error posting coverage comment:', error.message);
+            console.log('This is not a critical error - tests passed successfully.');
+            // Don't fail the workflow if commenting fails
+            process.exit(0);
+          }
+
+    - name: Upload coverage reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          frontend/coverage/
+        retention-days: 7
 
   lint:
     runs-on: ubuntu-latest
