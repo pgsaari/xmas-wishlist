@@ -194,12 +194,45 @@ jobs:
           cd frontend
           npm ci
 
+      - name: Clean frontend build artifacts
+        run: |
+          cd frontend
+          # Remove previous builds and coverage
+          rm -rf dist coverage dev-dist
+          # Clean npm cache to ensure fresh install
+          npm cache clean --force || true
+
       - name: Build frontend with API URL
         env:
           VITE_API_URL: ${{ needs.deploy-infrastructure.outputs.backendUrl }}/api
         run: |
           cd frontend
           npm run build
+          
+          # Verify build output size and file count
+          echo "Build output statistics:"
+          FILE_COUNT=$(find dist -type f | wc -l)
+          TOTAL_SIZE=$(du -sh dist | cut -f1)
+          echo "Total files in dist: $FILE_COUNT"
+          echo "Total size: $TOTAL_SIZE"
+          
+          # Check if file count is reasonable (Azure Static Web Apps has limits)
+          if [ $FILE_COUNT -gt 10000 ]; then
+            echo "WARNING: File count ($FILE_COUNT) is very high. This may cause deployment issues."
+            echo "Listing files to identify large directories:"
+            find dist -type f | head -50
+          fi
+          
+          # List top-level files/folders
+          echo "Contents of dist directory:"
+          ls -la dist/
+          
+          # Verify no source maps were generated
+          SOURCE_MAP_COUNT=$(find dist -name "*.map" -type f | wc -l)
+          if [ $SOURCE_MAP_COUNT -gt 0 ]; then
+            echo "WARNING: Found $SOURCE_MAP_COUNT source map files. These should not be in production builds."
+            find dist -name "*.map" -type f
+          fi
 
       - name: Wait for Static Web App to be accessible
         run: |
@@ -371,14 +404,27 @@ jobs:
           echo "token=$TOKEN_CLEAN" >> $GITHUB_OUTPUT
           echo "Deployment token successfully set as output"
 
+      - name: Prepare deployment package
+        run: |
+          cd frontend
+          # Create a clean deployment directory with only dist contents
+          mkdir -p ../frontend-deploy
+          cp -r dist/* ../frontend-deploy/
+          # Copy staticwebapp.config.json to deployment root if it exists
+          if [ -f staticwebapp.config.json ]; then
+            cp staticwebapp.config.json ../frontend-deploy/
+          fi
+          echo "Deployment package prepared"
+          echo "Files in deployment package: $(find ../frontend-deploy -type f | wc -l)"
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ steps.get-token.outputs.token }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
-          app_location: '/frontend'
-          output_location: 'dist'
+          app_location: '/frontend-deploy'
+          output_location: '/'
           skip_app_build: true
 
   deployment-summary:

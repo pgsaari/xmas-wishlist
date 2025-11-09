@@ -26,6 +26,7 @@ coverage/
 
 # Deployment
 backend-deploy/
+frontend-deploy/
 infrastructure/parameters.json
 
 # Private configuration files (user-specific)

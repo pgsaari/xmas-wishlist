@@ -31,6 +31,15 @@ export default defineConfig({
       ],
     },
   },
+  build: {
+    sourcemap: false, // Disable source maps to reduce file count
+    minify: 'esbuild', // Use esbuild for faster, smaller builds
+    rollupOptions: {
+      output: {
+        manualChunks: undefined, // Let Vite handle chunking automatically
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -63,7 +72,15 @@ export default defineConfig({
       },
       injectRegister: 'auto',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024, // 2MB max file size
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        // Limit precaching to essential files only
+        dontCacheBustURLsMatching: /\.\w{8}\./,
+        // Exclude large files and source maps from precache
+        globIgnores: ['**/*.map', '**/node_modules/**', '**/coverage/**'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\./i,
