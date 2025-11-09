@@ -51,9 +51,21 @@ interface DatabaseSchema {
 }
 
 // Determine the database path
-// __dirname will be either 'src' (when running with tsx) or 'dist' (when running compiled)
-// We want db.json in the backend directory, which is one level up from src/dist
-const dbPath = path.join(__dirname, '..', 'db.json');
+// In Azure App Service, use DB_PATH environment variable or /home for persistent storage
+// Otherwise, use the backend directory (one level up from src/dist)
+const getDbPath = (): string => {
+  if (process.env.DB_PATH) {
+    return path.join(process.env.DB_PATH, 'db.json');
+  }
+  // In Azure App Service, /home is persistent
+  if (process.env.WEBSITE_INSTANCE_ID) {
+    return '/home/db.json';
+  }
+  // Local development - use backend directory
+  return path.join(__dirname, '..', 'db.json');
+};
+
+const dbPath = getDbPath();
 
 // Ensure the directory exists
 const ensureDbDir = async () => {

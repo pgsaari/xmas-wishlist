@@ -1,0 +1,61 @@
+# Azure Deployment Setup Guide (Private Configuration)
+
+> **This is a template file. Copy this to a private location or use it as a reference.**
+> **Do NOT commit your actual values to a public repository.**
+
+## Your Azure Configuration
+
+Fill in your actual values below:
+
+- **Subscription ID**: `YOUR_SUBSCRIPTION_ID_HERE`
+- **Tenant ID**: `YOUR_TENANT_ID_HERE`
+- **Region**: `YOUR_PREFERRED_REGION` (e.g., `centralus`, `eastus`, `westus2`)
+
+## Quick Reference Commands
+
+### Find Your Subscription ID
+```bash
+az account list --output table
+```
+
+### Find Your Tenant ID
+```bash
+az account show --query tenantId --output tsv
+```
+
+### Create Service Principal
+```bash
+az login
+az account set --subscription YOUR_SUBSCRIPTION_ID_HERE
+az ad sp create-for-rbac --name "xmas-wishlist-github-actions" \
+  --role contributor \
+  --scopes /subscriptions/YOUR_SUBSCRIPTION_ID_HERE \
+  --sdk-auth
+```
+
+### Generate JWT Secret (PowerShell)
+```powershell
+-join ((65..90) + (97..122) + (48..57) | Get-Random -Count 64 | ForEach-Object {[char]$_})
+```
+
+### Generate JWT Secret (Linux/Mac)
+```bash
+openssl rand -base64 64
+```
+
+## GitHub Secrets Checklist
+
+- [ ] `AZURE_SUBSCRIPTION_ID` = `YOUR_SUBSCRIPTION_ID_HERE`
+- [ ] `AZURE_TENANT_ID` = `YOUR_TENANT_ID_HERE`
+- [ ] `AZURE_CLIENT_ID` = (from service principal JSON)
+- [ ] `AZURE_CLIENT_SECRET` = (from service principal JSON)
+- [ ] `RESOURCE_GROUP_NAME` = `rg-xmas-wishlist`
+- [ ] `LOCATION` = `YOUR_PREFERRED_REGION`
+- [ ] `JWT_SECRET` = (generated secret)
+
+## Notes
+
+- Keep this file private and never commit it to a public repository
+- Store all secrets only in GitHub Secrets
+- Rotate secrets periodically for better security
+
