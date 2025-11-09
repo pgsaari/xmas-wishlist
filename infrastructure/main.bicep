@@ -94,13 +94,14 @@ output frontendUrl string = 'https://${staticWebApp.properties.defaultHostname}'
 // Output the backend URL
 output backendUrl string = 'https://${appService.name}.azurewebsites.net'
 
-// Output static web app deployment token (for GitHub Actions)
-// Note: This output contains a secret but is required for CI/CD deployment
-@secure()
-output staticWebAppDeploymentToken string = staticWebApp.listSecrets().properties.apiKey
+// Note: Deployment token is retrieved via Azure CLI in the workflow
+// instead of using listSecrets() which may not be available immediately after creation
 
 // Output the app service name (for deployment)
 output appServiceName string = appService.name
+
+// Output the static web app name (for deployment token retrieval)
+output staticWebAppName string = staticWebApp.name
 
 // Output the resource group name
 output resourceGroupName string = resourceGroup().name

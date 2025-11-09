@@ -24,8 +24,9 @@ jobs:
     outputs:
       frontendUrl: ${{ steps.deploy.outputs.frontendUrl }}
       backendUrl: ${{ steps.deploy.outputs.backendUrl }}
-      staticWebAppDeploymentToken: ${{ steps.deploy.outputs.staticWebAppDeploymentToken }}
+      staticWebAppDeploymentToken: ${{ steps.get-token.outputs.token }}
       appServiceName: ${{ steps.deploy.outputs.appServiceName }}
+      staticWebAppName: ${{ steps.deploy.outputs.staticWebAppName }}
 
     steps:
       - name: Checkout code
@@ -79,11 +80,35 @@ jobs:
           parameters: infrastructure/parameters.json
           failOnStdErr: false
 
+      - name: Get Static Web App deployment token
+        id: get-token
+        run: |
+          # Wait a moment for the Static Web App to be fully provisioned
+          sleep 15
+          # Get the deployment token using Azure REST API
+          SUBSCRIPTION_ID="${{ env.AZURE_SUBSCRIPTION_ID }}"
+          RESOURCE_GROUP="${{ env.RESOURCE_GROUP_NAME }}"
+          STATIC_WEB_APP_NAME="${{ steps.deploy.outputs.staticWebAppName }}"
+          
+          # Use Azure REST API to list secrets (matching Bicep API version)
+          TOKEN=$(az rest --method POST \
+            --uri "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Web/staticSites/${STATIC_WEB_APP_NAME}/listSecrets?api-version=2023-01-01" \
+            --query "properties.apiKey" -o tsv)
+          
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "Error: Failed to retrieve deployment token"
+            exit 1
+          fi
+          
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
       - name: Output deployment results
         run: |
           echo "Frontend URL: ${{ steps.deploy.outputs.frontendUrl }}"
           echo "Backend URL: ${{ steps.deploy.outputs.backendUrl }}"
           echo "App Service Name: ${{ steps.deploy.outputs.appServiceName }}"
+          echo "Static Web App Name: ${{ steps.deploy.outputs.staticWebAppName }}"
 
   deploy-backend:
     name: Deploy Backend
