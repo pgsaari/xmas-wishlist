@@ -9,7 +9,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// Configure CORS to allow frontend URL if provided, otherwise allow all (for development)
+const frontendUrl = process.env.FRONTEND_URL;
+const corsOptions = frontendUrl
+  ? {
+      origin: frontendUrl,
+      credentials: true,
+    }
+  : {}; // Allow all origins in development
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Routes

@@ -12,6 +12,7 @@ backend/dist/
 backend/*.db
 backend/db.json
 backend/.env
+backend/coverage/
 
 # Frontend
 frontend/node_modules/
@@ -19,4 +20,16 @@ frontend/dist/
 frontend/dev-dist/
 frontend/.env
 frontend/coverage/
+*.lcov
+coverage/
+**/coverage/
+
+# Deployment
+backend-deploy/
+
+# Private configuration files (user-specific)
+AZURE_SETUP_PRIVATE.md
+*.private.md
+.env.local
+.env.*.local
 
