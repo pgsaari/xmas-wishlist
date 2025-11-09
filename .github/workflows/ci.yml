@@ -44,12 +44,14 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0  # Fetch all history for better coverage comparison
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -321,16 +323,34 @@ jobs:
         fi
 
     - name: Update coverage badge in README
-      if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+      if: always() && (github.ref == 'refs/heads/main' && github.event_name == 'push')
       continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         COVERAGE=${COVERAGE:-0}
         COLOR=${COLOR:-red}
-        # Update the badge URL in README using a more robust sed pattern
-        sed -i "s|![Coverage](https://img.shields.io/badge/coverage-[0-9]*%25-[a-z]*?style=flat-square)|![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}?style=flat-square)|g" README.md
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git diff --exit-code README.md || (git add README.md && git commit -m "Update coverage badge: ${COVERAGE}%" && git push)
+        echo "Updating coverage badge to ${COVERAGE}% (${COLOR})"
+        
+        # Configure git with proper credentials for pushing
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+        
+        # Update the badge URL in README
+        # Match the badge pattern and replace with new coverage
+        sed -i.bak "s|![Coverage](https://img.shields.io/badge/coverage-[0-9]*%25-[a-z]*?style=flat-square)|![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}?style=flat-square)|g" README.md
+        rm -f README.md.bak
+        
+        # Check if README changed and commit if it did
+        if ! git diff --quiet README.md; then
+          git add README.md
+          git commit -m "docs: update coverage badge to ${COVERAGE}% [skip ci]"
+          git push origin HEAD:main
+          echo "✅ Coverage badge updated to ${COVERAGE}%"
+        else
+          echo "ℹ️ Coverage badge already up to date at ${COVERAGE}%"
+        fi
 
     - name: Upload coverage reports
       if: always()
