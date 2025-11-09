@@ -63,9 +63,37 @@ jobs:
     - name: Install all dependencies
       run: npm run install:all
 
+    - name: Verify coverage provider is installed
+      run: |
+        cd frontend
+        if npm list @vitest/coverage-v8 > /dev/null 2>&1; then
+          echo "✅ @vitest/coverage-v8 is installed"
+        else
+          echo "❌ @vitest/coverage-v8 is NOT installed - installing now..."
+          npm install --save-dev @vitest/coverage-v8
+        fi
+
     - name: Run frontend tests with coverage
       run: cd frontend && npm run test:coverage
       continue-on-error: false
+      
+    - name: Verify coverage files were generated
+      if: always()
+      run: |
+        echo "Checking for coverage files..."
+        if [ -d "frontend/coverage" ]; then
+          echo "✅ Coverage directory exists"
+          echo "Files in coverage directory:"
+          ls -la frontend/coverage/ || true
+        else
+          echo "⚠️ Coverage directory was not created"
+        fi
+        if [ -f "frontend/coverage/coverage-summary.json" ]; then
+          echo "✅ coverage-summary.json exists"
+          echo "File size: $(wc -c < frontend/coverage/coverage-summary.json) bytes"
+        else
+          echo "❌ coverage-summary.json not found"
+        fi
 
     - name: Parse coverage and comment on PR
       if: github.event_name == 'pull_request'
@@ -78,8 +106,22 @@ jobs:
           const fs = require('fs');
           const path = require('path');
           
+          console.log('🔍 Starting coverage comment step...');
+          console.log('Current working directory:', process.cwd());
+          console.log('Coverage file path:', process.env.COVERAGE_FILE);
+          
           // Read coverage summary
           const coveragePath = path.join(process.cwd(), process.env.COVERAGE_FILE);
+          console.log('Full coverage path:', coveragePath);
+          
+          // Check if coverage directory exists
+          const coverageDir = path.dirname(coveragePath);
+          if (fs.existsSync(coverageDir)) {
+            console.log('Coverage directory exists');
+            console.log('Files in coverage directory:', fs.readdirSync(coverageDir));
+          } else {
+            console.log('⚠️ Coverage directory does not exist:', coverageDir);
+          }
           
           if (!fs.existsSync(coveragePath)) {
             console.log(`⚠️ Coverage file not found at: ${coveragePath}`);
@@ -88,6 +130,8 @@ jobs:
             // Don't fail the step - tests already passed
             process.exit(0);
           }
+          
+          console.log('✅ Coverage file found!');
           
           let coverage;
           try {
