@@ -92,7 +92,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
 output frontendUrl string = 'https://${staticWebApp.properties.defaultHostname}'
 
 // Output the backend URL
-output backendUrl string = 'https://${appService.properties.defaultHostname}'
+output backendUrl string = 'https://${appService.name}.azurewebsites.net'
 
 // Output static web app deployment token (for GitHub Actions)
 // Note: This output contains a secret but is required for CI/CD deployment

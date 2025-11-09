@@ -49,6 +49,26 @@ jobs:
             --location ${{ env.LOCATION }} \
             || true
 
+      - name: Create parameters file
+        run: |
+          cat > infrastructure/parameters.json << EOF
+          {
+            "\$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+              "appName": {
+                "value": "xmas-wishlist"
+              },
+              "location": {
+                "value": "${{ env.LOCATION }}"
+              },
+              "jwtSecret": {
+                "value": "${{ env.JWT_SECRET }}"
+              }
+            }
+          }
+          EOF
+
       - name: Deploy Bicep template
         id: deploy
         uses: azure/arm-deploy@v2
@@ -56,12 +76,7 @@ jobs:
           subscriptionId: ${{ env.AZURE_SUBSCRIPTION_ID }}
           resourceGroupName: ${{ env.RESOURCE_GROUP_NAME }}
           template: infrastructure/main.bicep
-          parameters: >
-            {
-              "appName": { "value": "xmas-wishlist" },
-              "location": { "value": "${{ env.LOCATION }}" },
-              "jwtSecret": { "value": "${{ env.JWT_SECRET }}" }
-            }
+          parameters: infrastructure/parameters.json
           failOnStdErr: false
 
       - name: Output deployment results

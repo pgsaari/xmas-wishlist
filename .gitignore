@@ -26,6 +26,7 @@ coverage/
 
 # Deployment
 backend-deploy/
+infrastructure/parameters.json
 
 # Private configuration files (user-specific)
 AZURE_SETUP_PRIVATE.md
