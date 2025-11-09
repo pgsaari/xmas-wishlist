@@ -298,7 +298,7 @@ jobs:
             process.exit(0);
           }
 
-    - name: Generate coverage badge
+    - name: Generate coverage badge info
       if: always()
       continue-on-error: true
       run: |
@@ -326,7 +326,7 @@ jobs:
       run: |
         COVERAGE=${COVERAGE:-0}
         COLOR=${COLOR:-red}
-        # Update the badge URL in README
+        # Update the badge URL in README using a more robust sed pattern
         sed -i "s|![Coverage](https://img.shields.io/badge/coverage-[0-9]*%25-[a-z]*?style=flat-square)|![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}?style=flat-square)|g" README.md
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
