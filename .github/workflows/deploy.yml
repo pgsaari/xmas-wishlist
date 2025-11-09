@@ -80,28 +80,137 @@ jobs:
           parameters: infrastructure/parameters.json
           failOnStdErr: false
 
+      - name: Wait for Static Web App to be ready
+        run: |
+          STATIC_WEB_APP_NAME="${{ steps.deploy.outputs.staticWebAppName }}"
+          RESOURCE_GROUP="${{ env.RESOURCE_GROUP_NAME }}"
+          
+          echo "Waiting for Static Web App to be fully provisioned..."
+          MAX_WAIT=120
+          WAIT_TIME=0
+          
+          while [ $WAIT_TIME -lt $MAX_WAIT ]; do
+            PROVISIONING_STATE=$(az staticwebapp show \
+              --name "${STATIC_WEB_APP_NAME}" \
+              --resource-group "${RESOURCE_GROUP}" \
+              --query "properties.provisioningState" -o tsv 2>/dev/null || echo "NotFound")
+            
+            if [ "$PROVISIONING_STATE" = "Succeeded" ]; then
+              echo "Static Web App is ready!"
+              break
+            elif [ "$PROVISIONING_STATE" = "NotFound" ]; then
+              echo "Static Web App not found yet, waiting..."
+            else
+              echo "Provisioning state: $PROVISIONING_STATE, waiting..."
+            fi
+            
+            sleep 10
+            WAIT_TIME=$((WAIT_TIME + 10))
+          done
+          
+          if [ "$PROVISIONING_STATE" != "Succeeded" ]; then
+            echo "Warning: Static Web App may not be fully ready (state: $PROVISIONING_STATE)"
+          fi
+
       - name: Get Static Web App deployment token
         id: get-token
         run: |
-          # Wait a moment for the Static Web App to be fully provisioned
-          sleep 15
-          # Get the deployment token using Azure REST API
           SUBSCRIPTION_ID="${{ env.AZURE_SUBSCRIPTION_ID }}"
           RESOURCE_GROUP="${{ env.RESOURCE_GROUP_NAME }}"
           STATIC_WEB_APP_NAME="${{ steps.deploy.outputs.staticWebAppName }}"
           
-          # Use Azure REST API to list secrets (matching Bicep API version)
-          TOKEN=$(az rest --method POST \
-            --uri "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Web/staticSites/${STATIC_WEB_APP_NAME}/listSecrets?api-version=2023-01-01" \
-            --query "properties.apiKey" -o tsv)
+          echo "Retrieving deployment token for: ${STATIC_WEB_APP_NAME}"
           
-          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-            echo "Error: Failed to retrieve deployment token"
+          # Retry logic for token retrieval
+          MAX_RETRIES=10
+          RETRY_COUNT=0
+          TOKEN=""
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ -z "$TOKEN" ]; do
+            echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
+            
+            # Use Azure REST API to list secrets
+            # Capture both stdout and stderr
+            TEMP_FILE=$(mktemp)
+            ERROR_FILE=$(mktemp)
+            
+            if az rest --method POST \
+              --uri "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Web/staticSites/${STATIC_WEB_APP_NAME}/listSecrets?api-version=2023-01-01" \
+              --headers "Content-Type=application/json" \
+              --query "properties.apiKey" -o tsv > "${TEMP_FILE}" 2> "${ERROR_FILE}"; then
+              
+              TOKEN=$(cat "${TEMP_FILE}" | tr -d '\n\r' | xargs)
+              
+              # Check for errors in stderr
+              if [ -s "${ERROR_FILE}" ]; then
+                ERROR_MSG=$(cat "${ERROR_FILE}")
+                echo "Error output: $ERROR_MSG"
+                if echo "$ERROR_MSG" | grep -qi "error\|failed\|unauthorized\|forbidden"; then
+                  TOKEN=""
+                  rm -f "${TEMP_FILE}" "${ERROR_FILE}"
+                  sleep 15
+                  RETRY_COUNT=$((RETRY_COUNT + 1))
+                  continue
+                fi
+              fi
+              
+              rm -f "${TEMP_FILE}" "${ERROR_FILE}"
+              
+              # Verify token is valid
+              if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ] || [ "$TOKEN" = "None" ]; then
+                echo "Token is empty or null"
+                TOKEN=""
+                sleep 15
+              elif echo "$TOKEN" | grep -qi "error\|failed\|unauthorized\|forbidden\|not found"; then
+                echo "Error in token response: $TOKEN"
+                TOKEN=""
+                sleep 15
+              elif [ ${#TOKEN} -lt 20 ] || [ ${#TOKEN} -gt 500 ]; then
+                echo "Token length looks invalid: ${#TOKEN} characters"
+                TOKEN=""
+                sleep 15
+              else
+                echo "Token retrieved successfully (length: ${#TOKEN})"
+                break
+              fi
+            else
+              echo "REST API call failed"
+              if [ -s "${ERROR_FILE}" ]; then
+                echo "Error details: $(cat "${ERROR_FILE}")"
+              fi
+              if [ -s "${TEMP_FILE}" ]; then
+                echo "Response: $(cat "${TEMP_FILE}")"
+              fi
+              TOKEN=""
+              rm -f "${TEMP_FILE}" "${ERROR_FILE}"
+              sleep 15
+            fi
+            
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+          done
+          
+          if [ -z "$TOKEN" ]; then
+            echo "ERROR: Failed to retrieve deployment token after $MAX_RETRIES attempts"
+            echo "Checking Static Web App details..."
+            az staticwebapp show --name "${STATIC_WEB_APP_NAME}" --resource-group "${RESOURCE_GROUP}" --output table || true
             exit 1
           fi
           
-          echo "::add-mask::$TOKEN"
-          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+          # Set output (ensuring no newlines)
+          TOKEN_CLEAN=$(echo "$TOKEN" | tr -d '\n\r')
+          echo "::add-mask::$TOKEN_CLEAN"
+          echo "token=$TOKEN_CLEAN" >> $GITHUB_OUTPUT
+          echo "Deployment token retrieved and set as output"
+
+      - name: Verify deployment token output
+        run: |
+          TOKEN="${{ steps.get-token.outputs.token }}"
+          if [ -z "$TOKEN" ]; then
+            echo "ERROR: Deployment token is empty!"
+            exit 1
+          else
+            echo "Deployment token retrieved successfully (length: ${#TOKEN})"
+          fi
 
       - name: Output deployment results
         run: |
@@ -109,6 +218,7 @@ jobs:
           echo "Backend URL: ${{ steps.deploy.outputs.backendUrl }}"
           echo "App Service Name: ${{ steps.deploy.outputs.appServiceName }}"
           echo "Static Web App Name: ${{ steps.deploy.outputs.staticWebAppName }}"
+          echo "Deployment Token: ${{ steps.get-token.outputs.token != '' && '***SET***' || '***NOT SET***' }}"
 
   deploy-backend:
     name: Deploy Backend
@@ -212,6 +322,18 @@ jobs:
         run: |
           cd frontend
           npm run build
+
+      - name: Verify deployment token is available
+        run: |
+          TOKEN="${{ needs.deploy-infrastructure.outputs.staticWebAppDeploymentToken }}"
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ] || [ "$TOKEN" = "" ]; then
+            echo "ERROR: Deployment token is not available!"
+            echo "This means the token was not successfully retrieved in the infrastructure job."
+            echo "Please check the infrastructure job logs for token retrieval errors."
+            exit 1
+          else
+            echo "Deployment token is available (length: ${#TOKEN})"
+          fi
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
