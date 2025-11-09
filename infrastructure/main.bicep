@@ -1,12 +1,9 @@
-@description('Main Bicep template for Xmas Wishlist application')
 targetScope = 'resourceGroup'
 
 param appName string = 'xmas-wishlist'
 param location string = resourceGroup().location
-param environment string = 'production'
-param jwtSecret string = ''
 @secure()
-param githubToken string = ''
+param jwtSecret string = ''
 
 // Frontend - Static Web App
 resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
@@ -68,7 +65,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
         }
         {
           name: 'FRONTEND_URL'
-          value: 'https://${staticWebApp.properties.defaultHostname}'
+          value: 'https://${staticWebApp.properties.defaultHostName}'
         }
         {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
@@ -92,12 +89,13 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
 }
 
 // Output the frontend URL
-output frontendUrl string = 'https://${staticWebApp.properties.defaultHostname}'
+output frontendUrl string = 'https://${staticWebApp.properties.defaultHostName}'
 
 // Output the backend URL
-output backendUrl string = 'https://${appService.properties.defaultHostname}'
+output backendUrl string = 'https://${appService.properties.defaultHostName}'
 
 // Output static web app deployment token (for GitHub Actions)
+// Note: This output contains a secret but is required for CI/CD deployment
 output staticWebAppDeploymentToken string = staticWebApp.listSecrets().properties.apiKey
 
 // Output the app service name (for deployment)
